@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   Alert,
   Pressable,
@@ -11,13 +11,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import DocRow from '../../components/DocRow';
 import Owly from '../../components/Owly';
 import TopBar from '../../components/TopBar';
-import { USER_NAME, useDocs, usePeople } from '../../store';
+import { USER_NAME, consumeFilter, useDocs, usePeople } from '../../store';
 import { daysLeft } from '../../lib/dates';
-import { initials } from '../../lib/format';
+import { TYPE_LABELS } from '../../data/seed';
 import { colors, fonts, gradients, radius } from '../../theme';
 
 const comingSoon = (what, milestone) =>
@@ -64,24 +64,38 @@ export default function Home() {
   const people = usePeople();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('all');
+  const [category, setCategory] = useState(null);
   const [chillOpen, setChillOpen] = useState(false);
+
+  // Arriving from Summary/Coverage with a filter request (owner or category).
+  useFocusEffect(
+    useCallback(() => {
+      const f = consumeFilter();
+      if (f) {
+        if (f.owner) setFilter(f.owner);
+        if (f.category) setCategory(f.category);
+        setQuery('');
+      }
+    }, []),
+  );
 
   const sorted = useMemo(() => {
     let list = docs.slice().sort((a, b) => daysLeft(a.expiry) - daysLeft(b.expiry));
     if (filter !== 'all') list = list.filter((d) => d.owner === filter);
+    if (category) list = list.filter((d) => d.type === category);
     const q = query.trim().toLowerCase();
     if (q) list = list.filter((d) => d.name.toLowerCase().includes(q));
     return list;
-  }, [docs, filter, query]);
+  }, [docs, filter, category, query]);
 
-  const searching = query.trim().length > 0;
-  const needy = searching
+  const flatMode = query.trim().length > 0 || category !== null;
+  const needy = flatMode
     ? []
     : sorted.filter((d) => {
         const dl = daysLeft(d.expiry);
         return dl < 0 || dl <= 30;
       });
-  const chill = searching ? [] : sorted.filter((d) => daysLeft(d.expiry) > 30);
+  const chill = flatMode ? [] : sorted.filter((d) => daysLeft(d.expiry) > 30);
   const ownerOf = (id) =>
     id === 'me' ? { id: 'me', name: USER_NAME } : people.find((p) => p.id === id);
 
@@ -144,15 +158,29 @@ export default function Home() {
           ))}
         </ScrollView>
 
-        {searching ? (
+        {category && (
+          <Pressable style={styles.filterPill} onPress={() => setCategory(null)}>
+            <Text style={styles.filterPillText}>
+              {TYPE_LABELS[category] || category} <Text style={styles.filterX}>✕</Text>
+            </Text>
+          </Pressable>
+        )}
+
+        {flatMode ? (
           sorted.length ? (
             sorted.map(renderDoc)
           ) : (
             <View style={styles.empty}>
               <Text style={styles.emptyTitle}>
-                No matches for <Text style={styles.sectAccent}>"{query.trim()}"</Text>
+                {category ? (
+                  <>No <Text style={styles.sectAccent}>{TYPE_LABELS[category]}</Text> documents here</>
+                ) : (
+                  <>No matches for <Text style={styles.sectAccent}>"{query.trim()}"</Text></>
+                )}
               </Text>
-              <Text style={styles.emptySub}>Try a different search.</Text>
+              <Text style={styles.emptySub}>
+                {category ? 'Tap the pill above to clear the filter.' : 'Try a different search.'}
+              </Text>
             </View>
           )
         ) : (
@@ -243,6 +271,16 @@ const styles = StyleSheet.create({
   },
   startText: { color: '#e14e73', fontFamily: fonts.extraBold, fontSize: 15 },
   chips: { gap: 8, paddingVertical: 12, paddingRight: 18 },
+  filterPill: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.coral,
+    borderRadius: radius.pill,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    marginBottom: 4,
+  },
+  filterPillText: { color: '#fff', fontSize: 13.5, fontFamily: fonts.extraBold },
+  filterX: { fontSize: 12 },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',

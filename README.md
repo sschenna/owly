@@ -12,9 +12,9 @@ list, Summary is the overview — no more duplicated document lists.
 
 ## Screens
 
-| Welcome | Home | Summary |
-|---|---|---|
-| ![Welcome](docs/screens/welcome.png) | ![Home](docs/screens/home.png) | ![Summary](docs/screens/summary.png) |
+| Welcome | Home | Summary | Coverage |
+|---|---|---|---|
+| ![Welcome](docs/screens/welcome.png) | ![Home](docs/screens/home.png) | ![Summary](docs/screens/summary.png) | ![Coverage](docs/screens/coverage.png) |
 
 *Screenshots are refreshed every milestone. PNGs live in `docs/screens/`.*
 
@@ -55,7 +55,8 @@ src/
     (tabs)/
       _layout.js     # bottom tabs: Home | + | Summary
       home.js        # action list: hero, search, filters, doc sections
-      summary.js     # overview: week strip, urgency hero, health, stats
+      summary.js     # overview: week, hero, stats, chart, categories, coverage
+    coverage.js      # drill-down: per-person document coverage
   components/        # reusable UI (Owly, DocRow, DocIcon, TopBar, …)
   data/              # seed data, categories, partner links
   lib/               # date + nudge + text helpers

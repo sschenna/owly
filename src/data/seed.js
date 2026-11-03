@@ -184,3 +184,13 @@ export function normalizeDoc(d) {
     ),
   };
 }
+
+// Friendly labels for the doc-type keys.
+export const TYPE_LABELS = {
+  passport: 'Passport',
+  license: "Driver's License",
+  visa: 'Visa',
+  idcard: 'ID Card',
+  insurance: 'Insurance',
+  custom: 'Custom',
+};

@@ -38,3 +38,15 @@ export function updatePeople(fn) {
   people = fn(people);
   emit();
 }
+
+// Cross-screen filter requests: Summary/Coverage ask Home to filter itself
+// (by owner or by category) the next time it gains focus.
+let pendingFilter = null;
+export function requestFilter(f) {
+  pendingFilter = f;
+}
+export function consumeFilter() {
+  const f = pendingFilter;
+  pendingFilter = null;
+  return f;
+}
