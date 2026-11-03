@@ -103,12 +103,17 @@ export default function Detail() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Pressable style={styles.back} onPress={() => router.back()}>
-          <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.coral} strokeWidth={2.6}>
-            <Path d="M15 6l-6 6 6 6" />
-          </Svg>
-          <Text style={styles.backText}>Home</Text>
-        </Pressable>
+        <View style={styles.topRow}>
+          <Pressable style={styles.back} onPress={() => router.back()}>
+            <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.coral} strokeWidth={2.6}>
+              <Path d="M15 6l-6 6 6 6" />
+            </Svg>
+            <Text style={styles.backText}>Home</Text>
+          </Pressable>
+          <Pressable onPress={() => router.push(`/add?edit=${id}`)}>
+            <Text style={styles.editText}>Edit</Text>
+          </Pressable>
+        </View>
 
         <LinearGradient colors={heroColors} style={styles.hero} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
           <DocIcon type={doc.type} size={76} />
@@ -295,8 +300,10 @@ export default function Detail() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   content: { paddingHorizontal: 18, paddingTop: 14, paddingBottom: 40 },
-  back: { flexDirection: 'row', alignItems: 'center', gap: 2, marginBottom: 12, alignSelf: 'flex-start' },
+  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+  back: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   backText: { fontSize: 15, fontFamily: fonts.bold, color: colors.coral },
+  editText: { fontSize: 15, fontFamily: fonts.extraBold, color: colors.coral },
   missing: { fontSize: 16, fontFamily: fonts.bold, color: colors.muted, textAlign: 'center', marginTop: 60 },
   hero: { borderRadius: 26, padding: 20, flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 14 },
   heroMid: { flex: 1, minWidth: 0 },

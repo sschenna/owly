@@ -1,12 +1,9 @@
 import { Tabs } from 'expo-router';
 import { router } from 'expo-router';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, fonts } from '../../theme';
-
-const comingSoon = (what, milestone) =>
-  Alert.alert('Coming soon', `${what} lands in Milestone ${milestone}.`, [{ text: 'OK' }]);
 
 function TabButton({ label, focused, onPress, children }) {
   return (
@@ -28,7 +25,7 @@ function TabButton({ label, focused, onPress, children }) {
   );
 }
 
-// Home | (+) | Summary — the big + opens the add flow (Milestone 4).
+// Home | (+) | Summary — the big + opens the add flow.
 // Tab switching uses the global router (not the tabBar's navigation prop).
 function CustomBar({ state }) {
   return (
@@ -47,7 +44,7 @@ function CustomBar({ state }) {
         <View style={styles.addSlot}>
           <Pressable
             style={styles.addBtn}
-            onPress={() => comingSoon('The add flow', 4)}
+            onPress={() => router.push('/add')}
             accessibilityLabel="Add document"
           >
             <Text style={styles.addPlus}>+</Text>
