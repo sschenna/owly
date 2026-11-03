@@ -1,0 +1,271 @@
+import { useMemo, useState } from 'react';
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Path } from 'react-native-svg';
+import { router } from 'expo-router';
+import DocRow from '../../components/DocRow';
+import Owly from '../../components/Owly';
+import TopBar from '../../components/TopBar';
+import { USER_NAME, useDocs, usePeople } from '../../store';
+import { daysLeft } from '../../lib/dates';
+import { initials } from '../../lib/format';
+import { colors, fonts, gradients, radius } from '../../theme';
+
+const comingSoon = (what, milestone) =>
+  Alert.alert('Coming soon', `${what} lands in Milestone ${milestone}.`, [{ text: 'OK' }]);
+
+function Chip({ label, color, selected, onPress }) {
+  return (
+    <Pressable
+      style={[styles.chip, selected && styles.chipOn]}
+      onPress={onPress}
+    >
+      {color ? <View style={[styles.chipDot, { backgroundColor: color }]} /> : null}
+      <Text style={[styles.chipText, selected && styles.chipTextOn]}>{label}</Text>
+    </Pressable>
+  );
+}
+
+function SectionHead({ title, accent, count, open, onToggle }) {
+  return (
+    <Pressable style={styles.sect} onPress={onToggle}>
+      <Text style={styles.sectTitle}>
+        {title} <Text style={styles.sectAccent}>{accent}</Text>
+      </Text>
+      <View style={styles.countBadge}>
+        <Text style={styles.countText}>{count}</Text>
+      </View>
+      <Svg
+        width={18}
+        height={18}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke={colors.muted}
+        strokeWidth={2.4}
+        style={{ transform: [{ rotate: open ? '90deg' : '0deg' }] }}
+      >
+        <Path d="M6 9l6 6-6 6" />
+      </Svg>
+    </Pressable>
+  );
+}
+
+export default function Home() {
+  const docs = useDocs();
+  const people = usePeople();
+  const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState('all');
+  const [chillOpen, setChillOpen] = useState(false);
+
+  const sorted = useMemo(() => {
+    let list = docs.slice().sort((a, b) => daysLeft(a.expiry) - daysLeft(b.expiry));
+    if (filter !== 'all') list = list.filter((d) => d.owner === filter);
+    const q = query.trim().toLowerCase();
+    if (q) list = list.filter((d) => d.name.toLowerCase().includes(q));
+    return list;
+  }, [docs, filter, query]);
+
+  const searching = query.trim().length > 0;
+  const needy = searching
+    ? []
+    : sorted.filter((d) => {
+        const dl = daysLeft(d.expiry);
+        return dl < 0 || dl <= 30;
+      });
+  const chill = searching ? [] : sorted.filter((d) => daysLeft(d.expiry) > 30);
+  const ownerOf = (id) =>
+    id === 'me' ? { id: 'me', name: USER_NAME } : people.find((p) => p.id === id);
+
+  const renderDoc = (d) => (
+    <DocRow key={d.id} doc={d} owner={ownerOf(d.owner)} onPress={() => comingSoon('Document details', 3)} />
+  );
+
+  return (
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
+        <TopBar
+          onProfile={() => comingSoon('Profile', 5)}
+          onBell={() => comingSoon('The nudge inbox', 5)}
+          hasAlerts={needy.length > 0}
+        />
+
+        <View style={styles.searchRow}>
+          <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.muted} strokeWidth={2}>
+            <Path d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14z" />
+            <Path d="M20 20l-3.5-3.5" />
+          </Svg>
+          <TextInput
+            style={styles.search}
+            placeholder="Search documents…"
+            placeholderTextColor={colors.muted}
+            value={query}
+            onChangeText={setQuery}
+          />
+        </View>
+
+        <LinearGradient colors={gradients.brand} style={styles.hero} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+          <View style={styles.heroLeft}>
+            <Text style={styles.heroHead}>NEVER MISS{'\n'}AN EXPIRY</Text>
+            <Pressable style={styles.startBtn} onPress={() => comingSoon('The add flow', 4)}>
+              <Text style={styles.startText}>Start</Text>
+            </Pressable>
+          </View>
+          <Owly size={104} mood={needy.length ? 'chill' : 'happy'} hideCaption />
+        </LinearGradient>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.chips}
+        >
+          <Chip label="All" selected={filter === 'all'} onPress={() => setFilter('all')} />
+          <Chip label={USER_NAME} selected={filter === 'me'} onPress={() => setFilter('me')} />
+          {people.map((p) => (
+            <Chip
+              key={p.id}
+              label={p.name}
+              color={p.color}
+              selected={filter === p.id}
+              onPress={() => setFilter(p.id)}
+            />
+          ))}
+        </ScrollView>
+
+        {searching ? (
+          sorted.length ? (
+            sorted.map(renderDoc)
+          ) : (
+            <View style={styles.empty}>
+              <Text style={styles.emptyTitle}>
+                No matches for <Text style={styles.sectAccent}>"{query.trim()}"</Text>
+              </Text>
+              <Text style={styles.emptySub}>Try a different search.</Text>
+            </View>
+          )
+        ) : (
+          <>
+            {needy.length ? (
+              <Pressable onPress={() => router.push('/summary')}>
+                <LinearGradient colors={gradients.red} style={styles.alert} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+                  <Text style={styles.alertText}>
+                    Uh oh — {needy.length} document{needy.length > 1 ? 's' : ''} need
+                    {needy.length > 1 ? '' : 's'} you now!
+                  </Text>
+                </LinearGradient>
+              </Pressable>
+            ) : (
+              <LinearGradient colors={gradients.green} style={styles.alert} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+                <Text style={styles.alertText}>All clear — everyone's on best behavior.</Text>
+              </LinearGradient>
+            )}
+
+            {needy.length > 0 && (
+              <>
+                <SectionHead title="Needs" accent="you now" count={needy.length} open onToggle={() => {}} />
+                {needy.map(renderDoc)}
+              </>
+            )}
+            {chill.length > 0 && (
+              <>
+                <SectionHead
+                  title="Chill"
+                  accent="zone"
+                  count={chill.length}
+                  open={chillOpen}
+                  onToggle={() => setChillOpen((v) => !v)}
+                />
+                {chillOpen && chill.map(renderDoc)}
+              </>
+            )}
+            {!needy.length && !chill.length && (
+              <View style={styles.empty}>
+                <Text style={styles.emptyTitle}>Squeaky clean!</Text>
+                <Text style={styles.emptySub}>Tap Start to track your first document.</Text>
+              </View>
+            )}
+          </>
+        )}
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: colors.bg },
+  scroll: { flex: 1 },
+  content: { paddingHorizontal: 18, paddingTop: 14, paddingBottom: 110 },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.pill,
+    paddingHorizontal: 16,
+    paddingVertical: 11,
+    marginBottom: 12,
+  },
+  search: { flex: 1, fontSize: 15, fontFamily: fonts.regular, color: colors.ink },
+  hero: {
+    borderRadius: 28,
+    padding: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+    shadowColor: colors.coral,
+    shadowOpacity: 0.35,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 6,
+  },
+  heroLeft: { flex: 1 },
+  heroHead: { color: '#fff', fontSize: 22, fontFamily: fonts.extraBold, letterSpacing: 0.5, lineHeight: 28, marginBottom: 12 },
+  startBtn: {
+    backgroundColor: '#fff',
+    borderRadius: radius.pill,
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    alignSelf: 'flex-start',
+  },
+  startText: { color: '#e14e73', fontFamily: fonts.extraBold, fontSize: 15 },
+  chips: { gap: 8, paddingVertical: 12, paddingRight: 18 },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    borderRadius: radius.pill,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+  },
+  chipOn: { backgroundColor: colors.coral, borderColor: 'transparent' },
+  chipDot: { width: 10, height: 10, borderRadius: 5 },
+  chipText: { fontSize: 13.5, fontFamily: fonts.extraBold, color: colors.ink },
+  chipTextOn: { color: '#fff' },
+  alert: { borderRadius: 22, padding: 15, marginBottom: 6 },
+  alertText: { color: '#fff', fontSize: 14.5, fontFamily: fonts.bold },
+  sect: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14, marginBottom: 10 },
+  sectTitle: { fontSize: 17, fontFamily: fonts.extraBold, color: colors.ink, letterSpacing: -0.3 },
+  sectAccent: { color: colors.coral },
+  countBadge: { backgroundColor: colors.coral, borderRadius: radius.pill, paddingHorizontal: 11, paddingVertical: 4 },
+  countText: { color: '#fff', fontSize: 12, fontFamily: fonts.extraBold },
+  empty: { alignItems: 'center', paddingVertical: 36 },
+  emptyTitle: { fontSize: 19, fontFamily: fonts.extraBold, color: colors.ink, marginBottom: 6 },
+  emptySub: { fontSize: 14, fontFamily: fonts.regular, color: colors.muted, textAlign: 'center', lineHeight: 21 },
+});

@@ -10,16 +10,18 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import Owly from '../components/Owly';
 import { colors, fonts, radius } from '../theme';
 
 // Welcome screen — the first thing anyone sees.
-// Milestone 1: greeting + mascot. Home screen lands in Milestone 2.
+// Get Started drops you into the Home tab.
 export default function Welcome() {
   const [name, setName] = useState('');
-  const [started, setStarted] = useState(false);
 
-  const displayName = name.trim();
+  const start = () => {
+    router.replace('/home');
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -32,7 +34,7 @@ export default function Welcome() {
           <View style={[styles.blob, styles.blobA]} />
           <View style={[styles.blob, styles.blobB]} />
 
-          <Owly size={190} mood={started ? 'happy' : 'chill'} />
+          <Owly size={190} mood="chill" />
 
           <Text style={styles.title}>
             We take care of your <Text style={styles.accent}>expiry dates.</Text>
@@ -42,39 +44,25 @@ export default function Welcome() {
             <Text style={styles.subBold}>before they expire</Text>. No spreadsheets, no panic.
           </Text>
 
-          {!started ? (
-            <>
-              <Text style={styles.label}>What should I call you?</Text>
-              <TextInput
-                style={styles.input}
-                value={name}
-                onChangeText={setName}
-                placeholder="Your name"
-                placeholderTextColor={colors.muted}
-                autoCapitalize="words"
-                returnKeyType="done"
-                onSubmitEditing={() => setStarted(true)}
-              />
-              <Pressable
-                style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
-                onPress={() => setStarted(true)}
-              >
-                <Text style={styles.buttonText}>Get Started</Text>
-              </Pressable>
-            </>
-          ) : (
-            <View style={styles.helloCard}>
-              <Text style={styles.helloTitle}>
-                Welcome aboard{displayName ? `, ${displayName}` : ''}!
-              </Text>
-              <Text style={styles.helloSub}>
-                This is Milestone 1 — the foundation. The Home screen, with your documents and
-                Owly on duty, lands in Milestone 2.
-              </Text>
-            </View>
-          )}
+          <Text style={styles.label}>What should I call you?</Text>
+          <TextInput
+            style={styles.input}
+            value={name}
+            onChangeText={setName}
+            placeholder="Your name"
+            placeholderTextColor={colors.muted}
+            autoCapitalize="words"
+            returnKeyType="done"
+            onSubmitEditing={start}
+          />
+          <Pressable
+            style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+            onPress={start}
+          >
+            <Text style={styles.buttonText}>Get Started</Text>
+          </Pressable>
 
-          <Text style={styles.foot}>Owly v0.1 · milestone 1</Text>
+          <Text style={styles.foot}>Owly v0.1 · milestone 2</Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -152,31 +140,5 @@ const styles = StyleSheet.create({
   },
   buttonPressed: { transform: [{ scale: 0.97 }], opacity: 0.92 },
   buttonText: { fontFamily: fonts.extraBold, fontSize: 17, color: '#fff', letterSpacing: -0.2 },
-  helloCard: {
-    width: '100%',
-    marginTop: 26,
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: colors.border,
-    shadowColor: '#be5a78',
-    shadowOpacity: 0.07,
-    shadowRadius: 16,
-    elevation: 2,
-  },
-  helloTitle: {
-    fontFamily: fonts.extraBold,
-    fontSize: 20,
-    color: colors.ink,
-    letterSpacing: -0.3,
-  },
-  helloSub: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.muted,
-    lineHeight: 21,
-    marginTop: 6,
-  },
   foot: { fontFamily: fonts.regular, fontSize: 12, color: colors.muted, marginTop: 26 },
 });

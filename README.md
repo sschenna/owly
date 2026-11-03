@@ -7,20 +7,27 @@ Your documents never leave your phone. Local-first, encrypted, private by design
 
 ## Status
 
-🚧 **Milestone 1** — project foundation: Expo + React Native app shell, brand theme,
-animated Owly mascot, welcome screen.
+🚧 **Milestone 2** — Home + Mission Control + tab navigation. Home is the action
+list, Summary is the overview — no more duplicated document lists.
+
+## Screens
+
+| Welcome | Home | Summary |
+|---|---|---|
+| ![Welcome](docs/screens/welcome.png) | ![Home](docs/screens/home.png) | ![Summary](docs/screens/summary.png) |
+
+*Screenshots are refreshed every milestone. PNGs live in `docs/screens/`.*
 
 ## Milestones
 
 | # | Milestone | Status |
 |---|-----------|--------|
 | 1 | Repo + scaffold — app shell, theme, Owly mascot, welcome screen | ✅ |
-| 2 | Home screen — header card, alert banner, doc sections, search, Owly on duty | ⬜ |
-| 3 | Mission Control — week strip, urgency hero, health score, calendar export | ⬜ |
-| 4 | Add/edit flow — 3-step form, nudge picker, per-nudge times, delete | ⬜ |
-| 5 | Detail screen — countdown, checklist, comments, renew flow, partner links | ⬜ |
-| 6 | Profile / People / Security + PIN / Notifications | ⬜ |
-| 7 | Polish + v1.0 — real app icon, final README, store assets | ⬜ |
+| 2 | Home + Summary + tab navigation — de-duplicated screens, search, filters | ✅ |
+| 3 | Detail screen — countdown, "Expiry date" + did-you-renew flow, renewal history, dedicated Nudges screen, partner links | ⬜ |
+| 4 | Add/edit flow — 3-step form reusing the Nudges screen, per-nudge times, delete | ⬜ |
+| 5 | Profile / People / Security + PIN / Notifications / nudge inbox | ⬜ |
+| 6 | Polish + v1.0 — real app icon, splash, final README, store assets | ⬜ |
 
 ## Tech
 
@@ -42,13 +49,18 @@ Scan the QR code with the **Expo Go** app (iOS / Android) to run it on your phon
 
 ```
 src/
-  app/            # screens — every file is a route (Expo Router)
-    _layout.js    # root layout: fonts + navigator
-    index.js      # welcome screen
-  components/     # reusable UI (Owly, …)
-  data/           # seed data, categories, partner links
-  lib/            # date helpers etc.
-  theme.js        # brand tokens: colors, fonts, radii
+  app/               # screens — every file is a route (Expo Router)
+    _layout.js       # root layout: fonts + navigator
+    index.js         # welcome screen
+    (tabs)/
+      _layout.js     # bottom tabs: Home | + | Summary
+      home.js        # action list: hero, search, filters, doc sections
+      summary.js     # overview: week strip, urgency hero, health, stats
+  components/        # reusable UI (Owly, DocRow, DocIcon, TopBar, …)
+  data/              # seed data, categories, partner links
+  lib/               # date + nudge + text helpers
+  store.js           # tiny in-memory store (persistence lands later)
+  theme.js           # brand tokens: colors, fonts, radii
 ```
 
 ## Privacy
