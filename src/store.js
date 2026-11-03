@@ -72,6 +72,11 @@ export function useSettings() {
   return useSyncExternalStore(subscribe, getSettings);
 }
 
+// Lets non-component modules (like the notification scheduler) react to changes.
+export function onStoreChange(fn) {
+  return subscribe(fn);
+}
+
 // Writers (used from Milestone 3 onward):
 export function updateDocs(fn) {
   docs = fn(docs);

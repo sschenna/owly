@@ -1,9 +1,10 @@
-import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { router } from 'expo-router';
 import TimeSheet from '../components/TimeSheet';
+import { ensurePushPermission, pushPermissionStatus } from '../lib/notify';
 import { updateSettings, useSettings } from '../store';
 import { colors, fonts, radius } from '../theme';
 
@@ -32,14 +33,32 @@ function Row({ label, sub, on, onFlip, last }) {
   );
 }
 
-// Notification preferences. These are saved and honored by the app;
-// actual OS-level push delivery needs a development build (Expo Go
-// can't register push tokens), so that's called out honestly below.
+// Notification preferences. Nudges are scheduled on this phone and the OS
+// delivers them even with the app closed — no server involved.
 export default function Notifications() {
   const s = useSettings();
   const [timeFor, setTimeFor] = useState(null); // 'start' | 'end' | null
+  const [perm, setPerm] = useState('undetermined');
+  const [permNote, setPermNote] = useState(false);
+
+  useEffect(() => {
+    pushPermissionStatus().then(setPerm);
+  }, []);
 
   const flip = (key) => updateSettings({ [key]: !s[key] });
+
+  const flipPush = async () => {
+    if (!s.push) {
+      // Turning on: ask the OS first so the toggle means something.
+      const granted = await ensurePushPermission();
+      setPerm(granted ? 'granted' : 'denied');
+      setPermNote(!granted);
+      updateSettings({ push: true });
+    } else {
+      setPermNote(false);
+      updateSettings({ push: false });
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -55,10 +74,25 @@ export default function Notifications() {
         <Text style={styles.sub}>How should Owly get your attention?</Text>
 
         <View style={styles.card}>
-          <Row label="Push nudges" sub="A ping when a nudge fires" on={s.push} onFlip={() => flip('push')} />
+          <Row label="Push nudges" sub="A ping when a nudge fires" on={s.push} onFlip={flipPush} />
           <Row label="Email summaries" sub="A weekly roundup, Sundays" on={s.email} onFlip={() => flip('email')} />
-          <Row label="Nudge sound" sub="Play your chosen tone" on={s.sound} onFlip={() => flip('sound')} last />
+          <Row label="Nudge sound" sub="Play the default tone" on={s.sound} onFlip={() => flip('sound')} last />
         </View>
+
+        {s.push && perm === 'denied' && (
+          <View style={styles.warn}>
+            <Text style={styles.warnText}>
+              Owly doesn\u2019t have notification permission — enable it in your phone\u2019s Settings to get nudges.
+            </Text>
+          </View>
+        )}
+        {permNote && (
+          <View style={styles.warn}>
+            <Text style={styles.warnText}>
+              Permission wasn\u2019t granted, so nudges are paused for now. Flip the switch again once it\u2019s allowed.
+            </Text>
+          </View>
+        )}
 
         <Text style={styles.sectionTitle}>Quiet hours</Text>
         <View style={styles.card}>
@@ -83,10 +117,11 @@ export default function Notifications() {
         </View>
 
         <View style={styles.note}>
-          <Text style={styles.noteTitle}>A note on push delivery</Text>
+          <Text style={styles.noteTitle}>How delivery works</Text>
           <Text style={styles.noteSub}>
-            These preferences are saved and the app honors them. Real phone notifications need a development
-            build — Expo Go can\u2019t register for push. Until then, the nudge inbox is your source of truth.
+            Nudges are scheduled right on this phone — your documents never touch a server. The phone
+            delivers them even with Owly closed. Quiet hours shift nudges to the morning; turning Push
+            nudges off cancels everything scheduled.
           </Text>
         </View>
       </ScrollView>
@@ -158,4 +193,13 @@ const styles = StyleSheet.create({
   },
   noteTitle: { fontSize: 15, fontFamily: fonts.extraBold, color: colors.ink, marginBottom: 4 },
   noteSub: { fontSize: 13.5, fontFamily: fonts.regular, color: colors.muted, lineHeight: 20 },
+  warn: {
+    marginTop: 12,
+    backgroundColor: 'rgba(242,102,139,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(242,102,139,0.35)',
+    borderRadius: radius.lg,
+    padding: 14,
+  },
+  warnText: { fontSize: 13.5, fontFamily: fonts.bold, color: colors.ink, lineHeight: 20 },
 });

@@ -1,4 +1,4 @@
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { useEffect, useState } from 'react';
@@ -11,6 +11,7 @@ import {
 import { colors, fonts } from '../theme';
 import { hydrate } from '../store';
 import { hasPin, verifyPin, wrongPinJoke } from '../lib/pin';
+import { initNotifications } from '../lib/notify';
 import PinPad from '../components/PinPad';
 import Owly from '../components/Owly';
 
@@ -54,6 +55,9 @@ export default function RootLayout() {
   useEffect(() => {
     hydrate();
     hasPin().then((h) => setLockState(h ? 'locked' : 'open'));
+    // Start the local-notification scheduler; tapping a notification opens the doc.
+    const cleanup = initNotifications((docId) => router.push(`/doc/${docId}`));
+    return cleanup;
   }, []);
 
   if (!fontsLoaded || lockState === 'checking') {

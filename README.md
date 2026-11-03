@@ -9,7 +9,8 @@ Your documents never leave your phone. Local-first, private by design.
 
 ✅ **Milestone 6** — the full v1 feature set is built: Home, Summary, Detail,
 Nudges, Add/Edit (+ document scanning), Profile, People, PIN lock,
-Notifications, and the nudge inbox. Remaining: upload the PNG assets
+**real local notifications** (scheduled on-device, delivered even with the app
+closed), and the nudge inbox. Remaining: upload the PNG assets
 (icon, splash, screenshots) via GitHub web.
 
 ## Screens
@@ -43,6 +44,8 @@ Notifications, and the nudge inbox. Remaining: upload the PNG assets
 - **AsyncStorage** — on-device persistence (docs, people, settings)
 - **expo-secure-store** — app PIN in the OS keychain (AsyncStorage fallback on web)
 - **expo-audio** — notification tones, synthesized in code (no audio files)
+- **expo-notifications** — nudges scheduled on-device; the OS delivers them
+  even with the app closed (no server, no push tokens needed)
 - **expo-camera** — document scanning (photo → OCR → expiry date)
 - No backend. No account. No cloud.
 
