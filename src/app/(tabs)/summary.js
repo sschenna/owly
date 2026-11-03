@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -11,9 +11,6 @@ import { requestFilter, useDocs, usePeople } from '../../store';
 import { daysLeft, parseIso } from '../../lib/dates';
 import { TYPE_LABELS } from '../../data/seed';
 import { colors, fonts, gradients, radius } from '../../theme';
-
-const comingSoon = (what, milestone) =>
-  Alert.alert('Coming soon', `${what} lands in Milestone ${milestone}.`, [{ text: 'OK' }]);
 
 // ---- status buckets, shared by stats / chart / categories / coverage ----
 export function bucket(docs) {
@@ -137,8 +134,8 @@ export default function Summary() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <TopBar
-          onProfile={() => comingSoon('Profile', 5)}
-          onBell={() => comingSoon('The nudge inbox', 5)}
+          onProfile={() => router.push('/profile')}
+          onBell={() => router.push('/inbox')}
           hasAlerts={urgentCount > 0}
         />
 

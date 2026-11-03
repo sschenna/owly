@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
 import {
-  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -19,9 +18,6 @@ import { USER_NAME, consumeFilter, useDocs, usePeople } from '../../store';
 import { daysLeft } from '../../lib/dates';
 import { TYPE_LABELS } from '../../data/seed';
 import { colors, fonts, gradients, radius } from '../../theme';
-
-const comingSoon = (what, milestone) =>
-  Alert.alert('Coming soon', `${what} lands in Milestone ${milestone}.`, [{ text: 'OK' }]);
 
 function Chip({ label, color, selected, onPress }) {
   return (
@@ -111,8 +107,8 @@ export default function Home() {
         keyboardShouldPersistTaps="handled"
       >
         <TopBar
-          onProfile={() => comingSoon('Profile', 5)}
-          onBell={() => comingSoon('The nudge inbox', 5)}
+          onProfile={() => router.push('/profile')}
+          onBell={() => router.push('/inbox')}
           hasAlerts={needy.length > 0}
         />
 
@@ -133,7 +129,7 @@ export default function Home() {
         <LinearGradient colors={gradients.brand} style={styles.hero} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
           <View style={styles.heroLeft}>
             <Text style={styles.heroHead}>NEVER MISS{'\n'}AN EXPIRY</Text>
-            <Pressable style={styles.startBtn} onPress={() => comingSoon('The add flow', 4)}>
+            <Pressable style={styles.startBtn} onPress={() => router.push('/add')}>
               <Text style={styles.startText}>Start</Text>
             </Pressable>
           </View>

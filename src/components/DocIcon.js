@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import Svg, { Circle, Defs, G, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
 import { docGradients } from '../theme';
 
@@ -47,7 +48,8 @@ const GLYPHS = {
 
 export default function DocIcon({ type = 'custom', size = 56 }) {
   const [c1, c2] = docGradients[type] || docGradients.custom;
-  const gid = `docg-${type}`;
+  // Unique per instance — duplicate SVG ids across icons break rendering.
+  const gid = `docg-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   return (
     <Svg width={size} height={size} viewBox="0 0 56 56">
       <Defs>

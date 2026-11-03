@@ -3,18 +3,23 @@
 **Never miss an expiry.** Owly watches your passports, licenses, visas and insurance —
 and nudges you *before* they expire. No spreadsheets, no panic.
 
-Your documents never leave your phone. Local-first, encrypted, private by design.
+Your documents never leave your phone. Local-first, private by design.
 
 ## Status
 
-🚧 **Milestone 2** — Home + Mission Control + tab navigation. Home is the action
-list, Summary is the overview — no more duplicated document lists.
+✅ **Milestone 5** — the full v1 feature set is built: Home, Summary, Detail,
+Nudges, Add/Edit, Profile, People, PIN lock, Notifications, and the nudge inbox.
+Remaining: M6 polish (real app icon, splash, store assets).
 
 ## Screens
 
-| Welcome | Home | Summary | Coverage |
+| Welcome | Home | Detail | Add |
 |---|---|---|---|
-| ![Welcome](docs/screens/welcome.png) | ![Home](docs/screens/home.png) | ![Summary](docs/screens/summary.png) | ![Coverage](docs/screens/coverage.png) |
+| ![Welcome](docs/screens/welcome.png) | ![Home](docs/screens/home.png) | ![Detail](docs/screens/detail.png) | ![Add](docs/screens/add.png) |
+
+| Summary | Coverage | Profile | Inbox |
+|---|---|---|---|
+| ![Summary](docs/screens/summary.png) | ![Coverage](docs/screens/coverage.png) | ![Profile](docs/screens/profile.png) | ![Inbox](docs/screens/inbox.png) |
 
 *Screenshots are refreshed every milestone. PNGs live in `docs/screens/`.*
 
@@ -24,9 +29,9 @@ list, Summary is the overview — no more duplicated document lists.
 |---|-----------|--------|
 | 1 | Repo + scaffold — app shell, theme, Owly mascot, welcome screen | ✅ |
 | 2 | Home + Summary + tab navigation — de-duplicated screens, search, filters | ✅ |
-| 3 | Detail screen — countdown, "Expiry date" + did-you-renew flow, renewal history, dedicated Nudges screen, partner links | ⬜ |
-| 4 | Add/edit flow — 3-step form reusing the Nudges screen, per-nudge times, delete | ⬜ |
-| 5 | Profile / People / Security + PIN / Notifications / nudge inbox | ⬜ |
+| 3 | Detail screen — countdown, "Expiry date" + did-you-renew flow, renewal history, dedicated Nudges screen, partner links | ✅ |
+| 4 | Add/edit flow — 3-step form reusing the Nudges screen, per-nudge times, delete + AsyncStorage persistence | ✅ |
+| 5 | Profile / People / Security + PIN / Notifications / nudge inbox | ✅ |
 | 6 | Polish + v1.0 — real app icon, splash, final README, store assets | ⬜ |
 
 ## Tech
@@ -34,7 +39,10 @@ list, Summary is the overview — no more duplicated document lists.
 - **Expo** + **React Native** (JavaScript) — one codebase, iPhone + Android
 - **Expo Router** — file-based navigation (`src/app/`)
 - **react-native-svg** — Owly the mascot, drawn in code
-- No backend. Data lives on-device (AsyncStorage, encrypted).
+- **AsyncStorage** — on-device persistence (docs, people, settings)
+- **expo-secure-store** — app PIN in the OS keychain (AsyncStorage fallback on web)
+- **expo-audio** — notification tones, synthesized in code (no audio files)
+- No backend. No account. No cloud.
 
 ## Run it
 
@@ -45,26 +53,50 @@ npx expo start
 
 Scan the QR code with the **Expo Go** app (iOS / Android) to run it on your phone.
 
+> **Note:** `expo-audio` and `expo-secure-store` need native modules. Sound previews
+> and the keychain-backed PIN work fully in a development build
+> (`npx expo run:android` / `eas build --profile development`); in Expo Go the
+> PIN falls back to on-device storage and sounds may not preview.
+
 ## Project layout
 
 ```
 src/
-  app/               # screens — every file is a route (Expo Router)
-    _layout.js       # root layout: fonts + navigator
-    index.js         # welcome screen
+  app/                     # screens — every file is a route (Expo Router)
+    _layout.js             # root: fonts, hydration, PIN lock gate
+    index.js               # welcome screen
     (tabs)/
-      _layout.js     # bottom tabs: Home | + | Summary
-      home.js        # action list: hero, search, filters, doc sections
-      summary.js     # overview: week, hero, stats, chart, categories, coverage
-    coverage.js      # drill-down: per-person document coverage
-  components/        # reusable UI (Owly, DocRow, DocIcon, TopBar, …)
-  data/              # seed data, categories, partner links
-  lib/               # date + nudge + text helpers
-  store.js           # tiny in-memory store (persistence lands later)
-  theme.js           # brand tokens: colors, fonts, radii
+      _layout.js           # bottom tabs: Home | + | Summary
+      home.js              # action list: hero, search, filters, doc sections
+      summary.js           # overview: stats, chart, categories, coverage
+    add.js                 # add/edit flow (3 steps, ?edit=<id> for editing)
+    coverage.js            # drill-down: per-person document coverage
+    doc/[id]/
+      index.js             # detail: countdown, rows, checklist, history, comments
+      nudges.js            # dedicated nudge manager (never inside the edit form)
+    inbox.js               # nudge inbox: upcoming + past, per-nudge delete
+    people.js              # people management
+    profile.js             # profile hub
+    security.js            # app PIN setup / change / remove
+    notifications.js       # notification preferences
+  components/              # reusable UI
+    Owly.js                # the mascot (animated SVG)
+    DocIcon.js / DocRow.js / TopBar.js
+    RowItem.js             # settings-style row
+    OptionSheet.js         # bottom-sheet option picker (replaces Alert)
+    CalendarSheet.js       # month calendar picker (pure JS)
+    TimeSheet.js           # hour/minute/AM-PM wheel picker (pure JS)
+    NudgeList.js           # nudge manager (shared by Nudges screen + add flow)
+    Comments.js            # per-doc comments with @-mentions
+    PinPad.js              # 4-digit PIN pad
+  data/seed.js             # categories, partners, sounds, seed docs/people
+  lib/                     # dates, nudges, sounds (synthesized), pin, format
+  store.js                 # tiny store: docs/people/settings + AsyncStorage
+  theme.js                 # brand tokens: colors, fonts, radii
 ```
 
 ## Privacy
 
-Owly is local-first. Documents, reminders and comments are stored encrypted on the
-device. There is no server, no account, and nothing to leak.
+Owly is local-first. Documents, reminders and comments are stored on the device
+(AsyncStorage) — there is no server, no account, and nothing to leak. The optional
+app PIN is kept in the OS keychain via expo-secure-store.

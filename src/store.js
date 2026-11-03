@@ -8,9 +8,18 @@ export const USER_NAME = 'Sri';
 
 const DOCS_KEY = 'owly-docs-v1';
 const PEOPLE_KEY = 'owly-people-v1';
+const SETTINGS_KEY = 'owly-settings-v1';
 
 let docs = seedDocs();
 let people = seedPeople();
+let settings = {
+  push: true,
+  email: false,
+  sound: true,
+  quietHours: false,
+  quietStart: '22:00',
+  quietEnd: '07:00',
+};
 let hydrated = false;
 
 const listeners = new Set();
@@ -24,18 +33,21 @@ function persist() {
   if (!hydrated) return; // never overwrite storage with seeds before loading
   AsyncStorage.setItem(DOCS_KEY, JSON.stringify(docs)).catch(() => {});
   AsyncStorage.setItem(PEOPLE_KEY, JSON.stringify(people)).catch(() => {});
+  AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)).catch(() => {});
 }
 
 // Load saved data once at launch. Screens render seed data first,
 // then re-render with the real data when this resolves.
 export async function hydrate() {
   try {
-    const [d, p] = await Promise.all([
+    const [d, p, s] = await Promise.all([
       AsyncStorage.getItem(DOCS_KEY),
       AsyncStorage.getItem(PEOPLE_KEY),
+      AsyncStorage.getItem(SETTINGS_KEY),
     ]);
     if (d) docs = JSON.parse(d).map(normalizeDoc);
     if (p) people = JSON.parse(p);
+    if (s) settings = { ...settings, ...JSON.parse(s) };
   } catch (e) {
     // Corrupt storage -> fall back to seeds rather than crashing.
   }
@@ -45,6 +57,7 @@ export async function hydrate() {
 
 export const getDocs = () => docs;
 export const getPeople = () => people;
+export const getSettings = () => settings;
 
 export function useDocs() {
   return useSyncExternalStore(subscribe, getDocs);
@@ -52,6 +65,10 @@ export function useDocs() {
 
 export function usePeople() {
   return useSyncExternalStore(subscribe, getPeople);
+}
+
+export function useSettings() {
+  return useSyncExternalStore(subscribe, getSettings);
 }
 
 // Writers (used from Milestone 3 onward):
@@ -63,6 +80,12 @@ export function updateDocs(fn) {
 
 export function updatePeople(fn) {
   people = fn(people);
+  emit();
+  persist();
+}
+
+export function updateSettings(patch) {
+  settings = { ...settings, ...patch };
   emit();
   persist();
 }

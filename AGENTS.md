@@ -61,3 +61,5 @@ Docs: https://docs.expo.dev/eas/index.md
 ## Lessons
 5. expo-linear-gradient crashes hard (`t.map` on undefined) when `colors` is undefined — e.g. a typo'd key like `gradients.purple` (real one is `gradients.brandPurple`). The minified stack points at `normalizeColor` inside a `useMemo`; check every `colors=` prop. Prefer a tiny helper that falls back to `gradients.brand` when the key is missing.
 6. React Native Web's `Alert.alert()` is a no-op (`static alert() {}`) — any flow behind an Alert is untestable headless and invisible on web. User-facing confirmations and choices use the custom `OptionSheet` instead; keep `Alert` only for temporary "coming soon" placeholders.
+7. SVG gradient IDs must be unique per icon instance (use React `useId`). DocIcon used `docg-<type>` — duplicate IDs across same-type icons on one screen made ALL of them render blank on web.
+8. expo-secure-store is a no-op on web (native module is `{}`) — `setItemAsync` throws. `src/lib/pin.js` falls back to AsyncStorage when `isAvailableAsync()` is false, so the PIN feature works in the web demo too (less secure there; keychain on real phones).

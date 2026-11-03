@@ -166,7 +166,6 @@ export function seedDocs() {
 export function normalizeDoc(d) {
   const steps = (CATS[d.type] && CATS[d.type].steps) || [];
   return {
-    reminders: [],
     repeat: null,
     nag: true,
     nagFreq: 'daily',
