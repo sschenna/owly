@@ -1,7 +1,7 @@
 import { Tabs } from 'expo-router';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Circle, Path } from 'react-native-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, fonts } from '../../theme';
 
@@ -25,7 +25,7 @@ function TabButton({ label, focused, onPress, children }) {
   );
 }
 
-// Home | (+) | Summary — the big + opens the add flow.
+// Home | (+) | Summary | Profile — the big + opens the add flow.
 // Tab switching uses the global router (not the tabBar's navigation prop).
 function CustomBar({ state }) {
   return (
@@ -61,6 +61,16 @@ function CustomBar({ state }) {
           <Path d="M10 20V4" />
           <Path d="M16 20v-8" />
         </TabButton>
+        <TabButton
+          label="Profile"
+          focused={state.index === 2}
+          onPress={() => {
+            if (state.index !== 2) router.push('/profile');
+          }}
+        >
+          <Circle cx="12" cy="8" r="4" />
+          <Path d="M4 21v-1a7 7 0 0 1 14 0v1" />
+        </TabButton>
       </View>
     </SafeAreaView>
   );
@@ -71,6 +81,7 @@ export default function TabLayout() {
     <Tabs screenOptions={{ headerShown: false }} tabBar={(props) => <CustomBar {...props} />}>
       <Tabs.Screen name="home" options={{ title: 'Home' }} />
       <Tabs.Screen name="summary" options={{ title: 'Summary' }} />
+      <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
     </Tabs>
   );
 }
