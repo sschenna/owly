@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import TopBar from '../../components/TopBar';
 import DocIcon from '../../components/DocIcon';
+import OptionSheet from '../../components/OptionSheet';
 import { requestFilter, useDocs, usePeople } from '../../store';
 import { daysLeft, parseIso } from '../../lib/dates';
 import { TYPE_LABELS } from '../../data/seed';
@@ -103,6 +104,7 @@ export default function Summary() {
   const docs = useDocs();
   const people = usePeople();
   const [range, setRange] = useState(6);
+  const [rangeOpen, setRangeOpen] = useState(false);
 
   const b = useMemo(() => bucket(docs), [docs]);
   const bars = useMemo(() => monthBuckets(docs, range), [docs, range]);
@@ -129,13 +131,7 @@ export default function Summary() {
     requestFilter({ category: type });
     router.push('/home');
   };
-  const pickRange = () =>
-    Alert.alert('Show expirations for', undefined, [
-      { text: 'Next 3 months', onPress: () => setRange(3) },
-      { text: 'Next 6 months', onPress: () => setRange(6) },
-      { text: 'Next 12 months', onPress: () => setRange(12) },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
+  const pickRange = () => setRangeOpen(true);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -228,6 +224,19 @@ export default function Summary() {
             </Pressable>
           </>
         )}
+
+        <OptionSheet
+          visible={rangeOpen}
+          title="Show expirations for"
+          options={[
+            { id: '3', label: 'Next 3 months' },
+            { id: '6', label: 'Next 6 months' },
+            { id: '12', label: 'Next 12 months' },
+          ]}
+          selectedId={String(range)}
+          onClose={() => setRangeOpen(false)}
+          onSelect={(o) => setRange(parseInt(o.id, 10))}
+        />
       </ScrollView>
     </SafeAreaView>
   );

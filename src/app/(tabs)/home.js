@@ -100,7 +100,7 @@ export default function Home() {
     id === 'me' ? { id: 'me', name: USER_NAME } : people.find((p) => p.id === id);
 
   const renderDoc = (d) => (
-    <DocRow key={d.id} doc={d} owner={ownerOf(d.owner)} onPress={() => comingSoon('Document details', 3)} />
+    <DocRow key={d.id} doc={d} owner={ownerOf(d.owner)} onPress={() => router.push(`/doc/${d.id}`)} />
   );
 
   return (
