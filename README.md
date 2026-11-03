@@ -7,9 +7,10 @@ Your documents never leave your phone. Local-first, private by design.
 
 ## Status
 
-✅ **Milestone 5** — the full v1 feature set is built: Home, Summary, Detail,
-Nudges, Add/Edit, Profile, People, PIN lock, Notifications, and the nudge inbox.
-Remaining: M6 polish (real app icon, splash, store assets).
+✅ **Milestone 6** — the full v1 feature set is built: Home, Summary, Detail,
+Nudges, Add/Edit (+ document scanning), Profile, People, PIN lock,
+Notifications, and the nudge inbox. Remaining: upload the PNG assets
+(icon, splash, screenshots) via GitHub web.
 
 ## Screens
 
@@ -32,7 +33,7 @@ Remaining: M6 polish (real app icon, splash, store assets).
 | 3 | Detail screen — countdown, "Expiry date" + did-you-renew flow, renewal history, dedicated Nudges screen, partner links | ✅ |
 | 4 | Add/edit flow — 3-step form reusing the Nudges screen, per-nudge times, delete + AsyncStorage persistence | ✅ |
 | 5 | Profile / People / Security + PIN / Notifications / nudge inbox | ✅ |
-| 6 | Polish + v1.0 — real app icon, splash, final README, store assets | ⬜ |
+| 6 | Polish + v1.0 — document scanning (OCR), app icon + splash config, store listing | ✅ |
 
 ## Tech
 
@@ -42,6 +43,7 @@ Remaining: M6 polish (real app icon, splash, store assets).
 - **AsyncStorage** — on-device persistence (docs, people, settings)
 - **expo-secure-store** — app PIN in the OS keychain (AsyncStorage fallback on web)
 - **expo-audio** — notification tones, synthesized in code (no audio files)
+- **expo-camera** — document scanning (photo → OCR → expiry date)
 - No backend. No account. No cloud.
 
 ## Run it

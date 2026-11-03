@@ -19,6 +19,7 @@ let settings = {
   quietHours: false,
   quietStart: '22:00',
   quietEnd: '07:00',
+  ocrKey: '',
 };
 let hydrated = false;
 
@@ -100,4 +101,16 @@ export function consumeFilter() {
   const f = pendingFilter;
   pendingFilter = null;
   return f;
+}
+
+// Scanned expiry handoff: the Scan screen stashes the picked date here,
+// and the Add flow consumes it when it regains focus.
+let scannedExpiry = null;
+export function setScannedExpiry(iso) {
+  scannedExpiry = iso;
+}
+export function consumeScannedExpiry() {
+  const v = scannedExpiry;
+  scannedExpiry = null;
+  return v;
 }

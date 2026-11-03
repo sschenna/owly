@@ -10,14 +10,15 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useCallback } from 'react';
 import DocIcon from '../components/DocIcon';
 import RowItem from '../components/RowItem';
 import CalendarSheet from '../components/CalendarSheet';
 import NudgeList from '../components/NudgeList';
 import OptionSheet from '../components/OptionSheet';
 import { CATS, normalizeDoc } from '../data/seed';
-import { USER_NAME, getDocs, getPeople, updateDocs } from '../store';
+import { USER_NAME, consumeScannedExpiry, getDocs, getPeople, updateDocs } from '../store';
 import { colors, fonts, gradients, radius } from '../theme';
 import { fmtD, todayIso } from '../lib/dates';
 
@@ -39,8 +40,20 @@ export default function Add() {
   const [expiry, setExpiry] = useState(editing ? editing.expiry : null);
   const [draft, setDraft] = useState(editing ? editing.reminders : []);
   const [calOpen, setCalOpen] = useState(false);
+  const [expiryHow, setExpiryHow] = useState(false);
   const [ownerOpen, setOwnerOpen] = useState(false);
   const [notice, setNotice] = useState('');
+
+  // Pick up a date scanned from the Scan screen.
+  useFocusEffect(
+    useCallback(() => {
+      const iso = consumeScannedExpiry();
+      if (iso) {
+        setExpiry(iso);
+        setNotice('');
+      }
+    }, []),
+  );
 
   const steps = editing ? 2 : 3;
   const ownerName =
@@ -151,7 +164,7 @@ export default function Add() {
                 label="Expiry date"
                 value={expiry ? fmtD(expiry) : 'Pick a date'}
                 valueColor={expiry ? colors.ink : colors.coral}
-                onPress={() => setCalOpen(true)}
+                onPress={() => setExpiryHow(true)}
                 last
               />
             </View>
@@ -183,6 +196,20 @@ export default function Add() {
         )}
       </ScrollView>
 
+      <OptionSheet
+        visible={expiryHow}
+        title="How should we get the date?"
+        options={[
+          { id: 'pick', label: 'Pick a date', sub: 'Choose it on the calendar' },
+          { id: 'scan', label: 'Scan document', sub: 'Snap a photo — Owly reads the expiry' },
+        ]}
+        onClose={() => setExpiryHow(false)}
+        onSelect={(o) => {
+          setExpiryHow(false);
+          if (o.id === 'pick') setCalOpen(true);
+          else router.push('/scan');
+        }}
+      />
       <CalendarSheet
         visible={calOpen}
         initial={expiry || todayIso()}

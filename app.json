@@ -1,1 +1,29 @@
-{"expo":{"android":{"package":"com.sschenna.owly"},"ios":{"bundleIdentifier":"com.sschenna.owly","supportsTablet":true},"name":"Owly","orientation":"portrait","scheme":"owly","slug":"owly","userInterfaceStyle":"automatic","version":"1.0.0"}}
+{
+  "expo": {
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#f2668b",
+        "foregroundImage": "./assets/adaptive-icon.png"
+      },
+      "package": "com.sschenna.owly"
+    },
+    "icon": "./assets/icon.png",
+    "ios": {
+      "bundleIdentifier": "com.sschenna.owly",
+      "supportsTablet": true
+    },
+    "name": "Owly",
+    "orientation": "portrait",
+    "plugins": [
+      "expo-audio",
+      "expo-secure-store",
+      "expo-asset",
+      "expo-camera",
+      "expo-splash-screen"
+    ],
+    "scheme": "owly",
+    "slug": "owly",
+    "userInterfaceStyle": "automatic",
+    "version": "1.0.0"
+  }
+}
