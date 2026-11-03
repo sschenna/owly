@@ -19,7 +19,7 @@ function PersonCard({ id, name, color, docs }) {
   const b = bucket(docs);
   const open = () => {
     requestFilter({ owner: id });
-    router.push('/home');
+    router.navigate('/home');
   };
   return (
     <Pressable style={styles.card} onPress={open}>

@@ -171,6 +171,7 @@ export function normalizeDoc(d) {
     nagFreq: 'daily',
     sound: 'Gentle chime',
     soundOn: true,
+    tone: 'funky', // 'funky' | 'straight' — per-doc nudge message style
     email: false,
     owner: 'me',
     history: [],

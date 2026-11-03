@@ -20,6 +20,8 @@ let settings = {
   quietStart: '22:00',
   quietEnd: '07:00',
   ocrKey: '',
+  tone: 'funky', // 'funky' | 'straight' — notification message style
+  defaultSound: 'Gentle chime',
 };
 let hydrated = false;
 

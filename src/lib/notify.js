@@ -72,6 +72,25 @@ function daysAtFire(expiryIso, fireDt) {
   return Math.round((parseIso(expiryIso) - fireMid) / 86400000);
 }
 
+/** Notification message styles. Funky = playful, Straight = plain. */
+export const TONES = {
+  funky: { label: 'Funky', desc: 'Playful, with personality' },
+  straight: { label: 'Straightforward', desc: 'Plain and direct' },
+};
+
+/** Build the notification body for a doc, in the given tone. */
+export function toneBody(tone, docName, dl) {
+  if (tone === 'straight') {
+    if (dl < 0) return `${docName} has expired.`;
+    if (dl === 0) return `${docName} expires today.`;
+    return `${docName} expires in ${dl} day${dl === 1 ? '' : 's'}.`;
+  }
+  // funky
+  if (dl < 0) return `\uD83D\uDEA8 ${docName} has EXPIRED! It's officially a pumpkin. Renew it now! \uD83C\uDF83`;
+  if (dl === 0) return `\u23F0 ${docName} expires TODAY! Last chance — go go go! \uD83C\uDFC3`;
+  return `\uD83E\uDD89 Hoo! ${docName} expires in ${dl} day${dl === 1 ? '' : 's'}. Future you says thanks for handling this early! \u2728`;
+}
+
 /** Cancel everything and re-schedule from current docs + settings. */
 export async function rescheduleAll() {
   if (Platform.OS === 'web') return;
@@ -100,13 +119,11 @@ export async function rescheduleAll() {
 
   const playSound = s.sound;
   for (const it of items.slice(0, MAX_SCHEDULED)) {
-    const when =
-      it.dl < 0 ? 'expired' : it.dl === 0 ? 'expires today' : `expires in ${it.dl} day${it.dl === 1 ? '' : 's'}`;
     try {
       await Notifications.scheduleNotificationAsync({
         content: {
           title: 'Owly nudge \uD83E\uDD89',
-          body: `${it.doc.name} ${when} — tap to take care of it.`,
+          body: toneBody(it.doc.tone || s.tone || 'funky', it.doc.name, it.dl),
           data: { docId: it.doc.id },
           sound: playSound ? 'default' : false,
         },
@@ -168,5 +185,29 @@ export async function pushPermissionStatus() {
     return (await Notifications.getPermissionsAsync()).status;
   } catch (e) {
     return 'undetermined';
+  }
+}
+
+/**
+ * Fire a test nudge a few seconds from now, using the current tone.
+ * Returns true if scheduled (native only — web uses the in-app mock).
+ */
+export async function sendTestNudge() {
+  if (Platform.OS === 'web') return false;
+  const s = getSettings();
+  try {
+    const dt = new Date(Date.now() + 4000);
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Owly nudge \uD83E\uDD89 (test)',
+        body: toneBody(s.tone || 'funky', 'Passport', 30),
+        data: {},
+        sound: s.sound ? 'default' : false,
+      },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: dt },
+    });
+    return true;
+  } catch (e) {
+    return false;
   }
 }
