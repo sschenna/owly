@@ -91,6 +91,16 @@ export default function Inbox() {
         <Text style={styles.title}>Nudge inbox</Text>
         <Text style={styles.sub}>Everything Owly wants to tell you, in one place.</Text>
 
+        <Pressable style={styles.settingsBtn} onPress={() => router.push('/notifications')}>
+          <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.coral} strokeWidth={2}>
+            <Path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" />
+          </Svg>
+          <Text style={styles.settingsText}>Nudge settings</Text>
+          <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={colors.coral} strokeWidth={2.4}>
+            <Path d="M9 6l6 6-6 6" />
+          </Svg>
+        </Pressable>
+
         <Text style={styles.sectionTitle}>Upcoming</Text>
         {upcoming.length === 0 ? (
           <View style={styles.empty}>
@@ -148,4 +158,17 @@ const styles = StyleSheet.create({
   },
   emptyTitle: { fontSize: 16, fontFamily: fonts.extraBold, color: colors.ink },
   emptySub: { fontSize: 13.5, fontFamily: fonts.regular, color: colors.muted, marginTop: 4, textAlign: 'center' },
+  settingsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.coral,
+    borderRadius: radius.lg,
+    padding: 14,
+    marginTop: 14,
+    marginBottom: 6,
+  },
+  settingsText: { flex: 1, fontSize: 15, fontFamily: fonts.extraBold, color: colors.coral },
 });

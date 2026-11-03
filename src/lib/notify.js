@@ -196,7 +196,8 @@ export async function sendTestNudge() {
   if (Platform.OS === 'web') return false;
   const s = getSettings();
   try {
-    const dt = new Date(Date.now() + 4000);
+    // Fire quickly — 1.5s so it feels instant but gives the UI time to update.
+    const dt = new Date(Date.now() + 1500);
     await Notifications.scheduleNotificationAsync({
       content: {
         title: 'Owly nudge \uD83E\uDD89 (test)',

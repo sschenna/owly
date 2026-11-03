@@ -88,7 +88,7 @@ export default function Notifications() {
     const ok = await sendTestNudge();
     setTestMsg(
       ok
-        ? 'Test nudge incoming — watch for it in about 4 seconds.'
+        ? 'Test nudge incoming — watch for it in a second or two.'
         : 'Could not schedule the test — check notification permission.',
     );
   };

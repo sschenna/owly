@@ -124,6 +124,20 @@ export async function previewSound(name) {
   const uri = soundUri(name);
   if (!uri) return;
   try {
+    // On web, use HTML5 Audio directly — more reliable than expo-audio for data URIs.
+    if (typeof window !== 'undefined' && typeof window.Audio !== 'undefined') {
+      const audio = new window.Audio(uri);
+      audio.volume = 1.0;
+      await audio.play().catch(() => {});
+      setTimeout(() => {
+        try {
+          audio.pause();
+          audio.src = '';
+        } catch (e) {}
+      }, 2500);
+      return;
+    }
+    // Native: use expo-audio.
     const player = createAudioPlayer({ uri });
     player.play();
     setTimeout(() => {

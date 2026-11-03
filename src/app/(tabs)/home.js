@@ -63,6 +63,7 @@ export default function Home() {
   const [category, setCategory] = useState(null);
   const [status, setStatus] = useState(null); // null | 'valid' | 'soon' | 'expired'
   const [chillOpen, setChillOpen] = useState(false);
+  const [needyOpen, setNeedyOpen] = useState(true);
 
   // Arriving from Summary/Coverage with a filter request (owner, category, or
   // status). Each filter type resets the others so stale combinations can't
@@ -230,8 +231,14 @@ export default function Home() {
 
             {needy.length > 0 && (
               <>
-                <SectionHead title="Needs" accent="you now" count={needy.length} open onToggle={() => {}} />
-                {needy.map(renderDoc)}
+                <SectionHead
+                  title="Needs"
+                  accent="you now"
+                  count={needy.length}
+                  open={needyOpen}
+                  onToggle={() => setNeedyOpen((v) => !v)}
+                />
+                {needyOpen && needy.map(renderDoc)}
               </>
             )}
             {chill.length > 0 && (
