@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import {
   Alert,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -102,6 +104,11 @@ export default function Detail() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
+      <KeyboardAvoidingView
+        style={styles.kb}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={0}
+      >
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.topRow}>
           <Pressable style={styles.back} onPress={() => router.back()}>
@@ -202,6 +209,7 @@ export default function Detail() {
           <Text style={styles.deleteText}>Delete document</Text>
         </Pressable>
       </ScrollView>
+      </KeyboardAvoidingView>
 
       <OptionSheet
         visible={sheet === 'repeat'}
@@ -299,6 +307,7 @@ export default function Detail() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
+  kb: { flex: 1 },
   content: { paddingHorizontal: 18, paddingTop: 14, paddingBottom: 40 },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
   back: { flexDirection: 'row', alignItems: 'center', gap: 2 },

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -132,21 +132,44 @@ export default function Security() {
 
         {mode === 'menu' ? (
           <View style={styles.card}>
-            {!pinned ? (
-              <RowItem label="Set app PIN" value="Off" onPress={() => setMode('enter')} last={!bioAvail} />
-            ) : (
+            <View style={styles.toggleRow}>
+              <View style={styles.toggleText}>
+                <Text style={styles.toggleLabel}>App PIN</Text>
+                <Text style={styles.toggleSub}>
+                  {pinned ? 'Owly locks when you leave' : 'Turn on to lock Owly'}
+                </Text>
+              </View>
+              <Switch
+                value={!!pinned}
+                onValueChange={(v) => {
+                  if (v) setMode('enter');
+                  else setMode('verify-remove');
+                }}
+                trackColor={{ false: '#e8dfe3', true: colors.coral }}
+                thumbColor="#fff"
+              />
+            </View>
+            {pinned ? (
               <>
                 <RowItem label="Change PIN" value="••••" onPress={() => setMode('verify-change')} />
-                <RowItem label="Remove PIN" value="" valueColor={colors.red} onPress={() => setMode('verify-remove')} last={!bioAvail} />
+                {bioAvail && (
+                  <RowItem
+                    label={`${bioType || 'Biometric'} unlock`}
+                    value={bioOn ? 'On' : 'Off'}
+                    onPress={toggleBio}
+                    last
+                  />
+                )}
               </>
-            )}
-            {bioAvail && (
-              <RowItem
-                label={`${bioType || 'Biometric'} unlock`}
-                value={bioOn ? 'On' : 'Off'}
-                onPress={toggleBio}
-                last
-              />
+            ) : (
+              bioAvail && (
+                <RowItem
+                  label={`${bioType || 'Biometric'} unlock`}
+                  value={bioOn ? 'On' : 'Off'}
+                  onPress={toggleBio}
+                  last
+                />
+              )
             )}
           </View>
         ) : (
@@ -203,6 +226,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 4,
   },
+  toggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  toggleText: { flex: 1 },
+  toggleLabel: { fontSize: 16, fontFamily: fonts.extraBold, color: colors.ink },
+  toggleSub: { fontSize: 13, fontFamily: fonts.regular, color: colors.muted, marginTop: 2 },
   padWrap: { alignItems: 'center', paddingTop: 10 },
   notice: { fontSize: 14, fontFamily: fonts.bold, color: colors.red, marginBottom: 16, textAlign: 'center' },
   storage: {

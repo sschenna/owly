@@ -22,6 +22,7 @@ let settings = {
   ocrKey: '',
   tone: 'funky', // 'funky' | 'straight' — notification message style
   defaultSound: 'Gentle chime',
+  uiSound: 'Pop', // UI tap sounds: Pop | Boop | Squeak | Plip | Silent
 };
 let hydrated = false;
 

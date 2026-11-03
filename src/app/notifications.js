@@ -6,7 +6,7 @@ import Svg, { Path } from 'react-native-svg';
 import { router } from 'expo-router';
 import TimeSheet from '../components/TimeSheet';
 import { ensurePushPermission, pushPermissionStatus, sendTestNudge, TONES, toneBody } from '../lib/notify';
-import { previewSound } from '../lib/sounds';
+import { previewSound, UI_SOUNDS, playUiSound } from '../lib/sounds';
 import { SOUNDS } from '../data/seed';
 import { updateSettings, useSettings } from '../store';
 import { colors, fonts, gradients, radius } from '../theme';
@@ -186,6 +186,33 @@ export default function Notifications() {
             <Text style={styles.mockNote}>On your phone this arrives as a real notification, even with Owly closed.</Text>
           </View>
         )}
+
+        <Text style={styles.sectionTitle}>UI sounds</Text>
+        <Text style={styles.sectionSub}>Funny blips for taps and buttons. Tap to hear it.</Text>
+        <View style={styles.card}>
+          {UI_SOUNDS.map((name, i) => (
+            <Pressable
+              key={name}
+              style={[styles.soundRow, i === UI_SOUNDS.length - 1 && styles.last]}
+              onPress={() => {
+                playUiSound(name);
+                updateSettings({ uiSound: name });
+              }}
+            >
+              <View style={[styles.radio, s.uiSound === name && styles.radioOn]}>
+                {s.uiSound === name && <Text style={styles.radioTick}>✓</Text>}
+              </View>
+              <Text style={styles.label}>{name}</Text>
+              {name !== 'Silent' && (
+                <View style={styles.playBtn}>
+                  <Svg width={16} height={16} viewBox="0 0 24 24" fill={colors.coral}>
+                    <Path d="M8 5v14l11-7z" />
+                  </Svg>
+                </View>
+              )}
+            </Pressable>
+          ))}
+        </View>
 
         <Text style={styles.sectionTitle}>Quiet hours</Text>
         <View style={styles.card}>

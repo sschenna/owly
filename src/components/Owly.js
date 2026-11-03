@@ -44,6 +44,7 @@ export default function Owly({ size = 200, mood = 'chill', hideCaption = false }
   const rot = useRef(new Animated.Value(0)).current; // rotation driver
   const running = useRef([]);
   const timers = useRef([]);
+  const hootTimer = useRef(null);
 
   const later = (ms, fn) => {
     const id = setTimeout(fn, ms);
@@ -175,8 +176,11 @@ export default function Owly({ size = 200, mood = 'chill', hideCaption = false }
       finishReaction(850);
     } else {
       setHoot(true);
-      later(1000, () => setHoot(false));
-      finishReaction(1050);
+      // Use a dedicated timer (not in timers.current) so rapid taps don't
+      // clear the hide via stopAll().
+      if (hootTimer.current) clearTimeout(hootTimer.current);
+      hootTimer.current = setTimeout(() => setHoot(false), 1200);
+      finishReaction(1250);
     }
   };
 

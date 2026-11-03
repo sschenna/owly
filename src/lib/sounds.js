@@ -110,6 +110,49 @@ const RECIPES = {
   },
 };
 
+// UI sound effects — short, funny blips for taps, adds, deletes.
+const UI_RECIPES = {
+  'Pop': () => sweep(500, 900, 0.08, 0.4),
+  'Boop': () => boop(520, 0, 0.09, 0.4, Math.floor(0.12 * SR)),
+  'Squeak': () => sweep(900, 1400, 0.1, 0.35),
+  'Plip': () => {
+    const total = Math.floor(0.15 * SR);
+    return mix(total, note(784, 0, 0.07, 0.4, total), note(1046.5, 0.06, 0.08, 0.35, total));
+  },
+};
+
+export const UI_SOUNDS = ['Pop', 'Boop', 'Squeak', 'Plip', 'Silent'];
+
+const uiCache = {};
+
+/** Data URI for a UI sound. Null for Silent. */
+export function uiSoundUri(name) {
+  if (name === 'Silent' || !UI_RECIPES[name]) return null;
+  if (!uiCache[name]) uiCache[name] = wavDataUri(UI_RECIPES[name]());
+  return uiCache[name];
+}
+
+/** Play a UI sound effect. Never throws. Respects the uiSound setting. */
+export async function playUiSound(getter) {
+  try {
+    const name = typeof getter === 'function' ? getter() : getter;
+    if (!name || name === 'Silent') return;
+    const uri = uiSoundUri(name);
+    if (!uri) return;
+    if (typeof window !== 'undefined' && typeof window.Audio !== 'undefined') {
+      const audio = new window.Audio(uri);
+      audio.volume = 0.5;
+      await audio.play().catch(() => {});
+      return;
+    }
+    const player = createAudioPlayer({ uri });
+    player.play();
+    setTimeout(() => {
+      try { player.pause(); player.remove && player.remove(); } catch (e) {}
+    }, 800);
+  } catch (e) {}
+}
+
 const cache = {};
 
 /** Data URI for a named sound (built once, then cached). Null for Silent. */

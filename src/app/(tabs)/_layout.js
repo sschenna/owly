@@ -4,10 +4,20 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, fonts } from '../../theme';
+import { getSettings } from '../../store';
+import { playUiSound } from '../../lib/sounds';
+
+const uiTap = () => playUiSound(() => getSettings().uiSound);
 
 function TabButton({ label, focused, onPress, children }) {
   return (
-    <Pressable style={styles.tab} onPress={onPress}>
+    <Pressable
+      style={styles.tab}
+      onPress={() => {
+        uiTap();
+        onPress();
+      }}
+    >
       <Svg
         width={22}
         height={22}
@@ -53,7 +63,10 @@ function CustomBar({ state }) {
       </SafeAreaView>
       <Pressable
         style={styles.fab}
-        onPress={() => router.push('/add')}
+        onPress={() => {
+          uiTap();
+          router.push('/add');
+        }}
         accessibilityLabel="Add document"
       >
         <Text style={styles.fabPlus}>+</Text>
