@@ -25,54 +25,40 @@ function TabButton({ label, focused, onPress, children }) {
   );
 }
 
-// Home | (+) | Summary | Profile — the big + opens the add flow.
-// Tab switching uses the global router (not the tabBar's navigation prop).
+// Home | Summary | Profile — the + is a floating button at bottom-right,
+// just above the tab bar. Tab switching uses router.navigate (not push)
+// so the stack doesn't accumulate duplicate tab entries.
 function CustomBar({ state }) {
+  const go = (index, href) => {
+    if (state.index !== index) router.navigate(href);
+  };
   return (
-    <SafeAreaView edges={['bottom']} style={styles.safe}>
-      <View style={styles.bar}>
-        <TabButton
-          label="Home"
-          focused={state.index === 0}
-          onPress={() => {
-            if (state.index !== 0) router.push('/home');
-          }}
-        >
-          <Path d="M3 11l9-8 9 8" />
-          <Path d="M5 10v10h5v-6h4v6h5V10" />
-        </TabButton>
-        <View style={styles.addSlot}>
-          <Pressable
-            style={styles.addBtn}
-            onPress={() => router.push('/add')}
-            accessibilityLabel="Add document"
-          >
-            <Text style={styles.addPlus}>+</Text>
-          </Pressable>
+    <View style={styles.wrapper}>
+      <SafeAreaView edges={['bottom']} style={styles.safe}>
+        <View style={styles.bar}>
+          <TabButton label="Home" focused={state.index === 0} onPress={() => go(0, '/home')}>
+            <Path d="M3 11l9-8 9 8" />
+            <Path d="M5 10v10h5v-6h4v6h5V10" />
+          </TabButton>
+          <TabButton label="Summary" focused={state.index === 1} onPress={() => go(1, '/summary')}>
+            <Path d="M4 20V10" />
+            <Path d="M10 20V4" />
+            <Path d="M16 20v-8" />
+          </TabButton>
+          <TabButton label="Profile" focused={state.index === 2} onPress={() => go(2, '/profile')}>
+            <Circle cx="12" cy="8" r="4" />
+            <Path d="M4 21v-1a7 7 0 0 1 14 0v1" />
+          </TabButton>
         </View>
-        <TabButton
-          label="Summary"
-          focused={state.index === 1}
-          onPress={() => {
-            if (state.index !== 1) router.push('/summary');
-          }}
-        >
-          <Path d="M4 20V10" />
-          <Path d="M10 20V4" />
-          <Path d="M16 20v-8" />
-        </TabButton>
-        <TabButton
-          label="Profile"
-          focused={state.index === 2}
-          onPress={() => {
-            if (state.index !== 2) router.push('/profile');
-          }}
-        >
-          <Circle cx="12" cy="8" r="4" />
-          <Path d="M4 21v-1a7 7 0 0 1 14 0v1" />
-        </TabButton>
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+      <Pressable
+        style={styles.fab}
+        onPress={() => router.push('/add')}
+        accessibilityLabel="Add document"
+      >
+        <Text style={styles.fabPlus}>+</Text>
+      </Pressable>
+    </View>
   );
 }
 
@@ -87,6 +73,7 @@ export default function TabLayout() {
 }
 
 const styles = StyleSheet.create({
+  wrapper: { position: 'relative' },
   safe: { backgroundColor: colors.surface },
   bar: {
     flexDirection: 'row',
@@ -98,20 +85,21 @@ const styles = StyleSheet.create({
   tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3, paddingBottom: 6 },
   tabLabel: { fontSize: 11, fontFamily: fonts.extraBold, color: colors.muted },
   tabLabelActive: { color: colors.coral },
-  addSlot: { width: 76, alignItems: 'center', justifyContent: 'flex-start' },
-  addBtn: {
+  fab: {
+    position: 'absolute',
+    right: 18,
+    bottom: 92,
     width: 60,
     height: 60,
     borderRadius: 30,
     backgroundColor: colors.coral,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: -28,
     shadowColor: colors.coral,
     shadowOpacity: 0.42,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 8 },
     elevation: 6,
   },
-  addPlus: { color: '#fff', fontSize: 30, fontFamily: fonts.extraBold, lineHeight: 32 },
+  fabPlus: { color: '#fff', fontSize: 30, fontFamily: fonts.extraBold, lineHeight: 32 },
 });

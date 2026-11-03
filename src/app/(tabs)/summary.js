@@ -8,7 +8,7 @@ import TopBar from '../../components/TopBar';
 import DocIcon from '../../components/DocIcon';
 import OptionSheet from '../../components/OptionSheet';
 import { requestFilter, useDocs, usePeople } from '../../store';
-import { daysLeft, parseIso } from '../../lib/dates';
+import { daysLeft, fmtD, parseIso } from '../../lib/dates';
 import { TYPE_LABELS } from '../../data/seed';
 import { colors, fonts, gradients, radius } from '../../theme';
 
@@ -30,11 +30,11 @@ function monthBuckets(docs, n) {
   for (let i = 0; i < n; i++) {
     const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
     const label = d.toLocaleDateString('en-US', { month: 'short' });
-    const count = docs.filter((doc) => {
+    const inMonth = docs.filter((doc) => {
       const e = parseIso(doc.expiry);
       return e.getFullYear() === d.getFullYear() && e.getMonth() === d.getMonth();
-    }).length;
-    out.push({ label, count });
+    });
+    out.push({ label, count: inMonth.length, docs: inMonth });
   }
   return out;
 }
@@ -87,13 +87,13 @@ function StatIcon({ kind }) {
   );
 }
 
-function StatCard({ kind, num, label }) {
+function StatCard({ kind, num, label, onPress }) {
   return (
-    <View style={styles.statCard}>
+    <Pressable style={styles.statCard} onPress={onPress}>
       <StatIcon kind={kind} />
       <Text style={styles.statNum}>{num}</Text>
       <Text style={styles.statLbl}>{label}</Text>
-    </View>
+    </Pressable>
   );
 }
 
@@ -102,6 +102,7 @@ export default function Summary() {
   const people = usePeople();
   const [range, setRange] = useState(6);
   const [rangeOpen, setRangeOpen] = useState(false);
+  const [monthDocs, setMonthDocs] = useState(null); // {label, docs} for the bar sheet
 
   const b = useMemo(() => bucket(docs), [docs]);
   const bars = useMemo(() => monthBuckets(docs, range), [docs, range]);
@@ -126,7 +127,11 @@ export default function Summary() {
   const openCoverage = () => router.push('/coverage');
   const openCategory = (type) => {
     requestFilter({ category: type });
-    router.push('/home');
+    router.navigate('/home');
+  };
+  const openStatus = (status) => {
+    requestFilter({ status });
+    router.navigate('/home');
   };
   const pickRange = () => setRangeOpen(true);
 
@@ -143,10 +148,10 @@ export default function Summary() {
         <Text style={styles.subtitle}>An overview of your documents</Text>
 
         <View style={styles.statGrid}>
-          <StatCard kind="doc" num={b.total} label="Total Documents" />
-          <StatCard kind="check" num={b.valid} label="Valid" />
-          <StatCard kind="clock" num={b.soon} label="Expiring Soon" />
-          <StatCard kind="alert" num={b.expired} label="Expired" />
+          <StatCard kind="doc" num={b.total} label="Total Documents" onPress={() => openStatus(null)} />
+          <StatCard kind="check" num={b.valid} label="Valid" onPress={() => openStatus('valid')} />
+          <StatCard kind="clock" num={b.soon} label="Expiring Soon" onPress={() => openStatus('soon')} />
+          <StatCard kind="alert" num={b.expired} label="Expired" onPress={() => openStatus('expired')} />
         </View>
 
         {docs.length > 0 && (
@@ -163,7 +168,11 @@ export default function Summary() {
             <View style={styles.chartCard}>
               <View style={styles.bars}>
                 {bars.map((bar) => (
-                  <View key={bar.label} style={styles.barCol}>
+                  <Pressable
+                    key={bar.label}
+                    style={styles.barCol}
+                    onPress={() => bar.count > 0 && setMonthDocs({ label: bar.label, docs: bar.docs })}
+                  >
                     <Text style={styles.barCount}>{bar.count}</Text>
                     <View style={styles.barTrack}>
                       <LinearGradient
@@ -172,9 +181,10 @@ export default function Summary() {
                       />
                     </View>
                     <Text style={styles.barLabel}>{bar.label}</Text>
-                  </View>
+                  </Pressable>
                 ))}
               </View>
+              <Text style={styles.chartHint}>Tap a bar to see what is expiring</Text>
             </View>
 
             <Text style={styles.cardTitlePad}>Documents by Category</Text>
@@ -234,6 +244,20 @@ export default function Summary() {
           onClose={() => setRangeOpen(false)}
           onSelect={(o) => setRange(parseInt(o.id, 10))}
         />
+        <OptionSheet
+          visible={monthDocs !== null}
+          title={monthDocs ? `Expiring in ${monthDocs.label}` : ''}
+          options={(monthDocs ? monthDocs.docs : []).map((d) => ({
+            id: d.id,
+            label: d.name,
+            sub: `Expires ${fmtD(d.expiry)}`,
+          }))}
+          onClose={() => setMonthDocs(null)}
+          onSelect={(o) => {
+            setMonthDocs(null);
+            router.push(`/doc/${o.id}`);
+          }}
+        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -278,6 +302,7 @@ const styles = StyleSheet.create({
   barTrack: { height: 110, justifyContent: 'flex-end' },
   bar: { width: 34, borderRadius: 9 },
   barLabel: { fontSize: 11.5, fontFamily: fonts.bold, color: colors.muted },
+  chartHint: { fontSize: 12, fontFamily: fonts.regular, color: colors.muted, textAlign: 'center', marginTop: 8 },
   listCard: {
     backgroundColor: colors.surface,
     borderWidth: 1,

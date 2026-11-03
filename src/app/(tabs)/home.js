@@ -61,15 +61,29 @@ export default function Home() {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('all');
   const [category, setCategory] = useState(null);
+  const [status, setStatus] = useState(null); // null | 'valid' | 'soon' | 'expired'
   const [chillOpen, setChillOpen] = useState(false);
 
-  // Arriving from Summary/Coverage with a filter request (owner or category).
+  // Arriving from Summary/Coverage with a filter request (owner, category, or
+  // status). Each filter type resets the others so stale combinations can't
+  // hide documents.
   useFocusEffect(
     useCallback(() => {
       const f = consumeFilter();
       if (f) {
-        if (f.owner) setFilter(f.owner);
-        if (f.category) setCategory(f.category);
+        if (f.category) {
+          setCategory(f.category);
+          setFilter('all');
+          setStatus(null);
+        } else if (f.owner) {
+          setFilter(f.owner);
+          setCategory(null);
+          setStatus(null);
+        } else if ('status' in f) {
+          setStatus(f.status); // null clears the status filter (e.g. "Total")
+          setFilter('all');
+          setCategory(null);
+        }
         setQuery('');
       }
     }, []),
@@ -79,12 +93,20 @@ export default function Home() {
     let list = docs.slice().sort((a, b) => daysLeft(a.expiry) - daysLeft(b.expiry));
     if (filter !== 'all') list = list.filter((d) => d.owner === filter);
     if (category) list = list.filter((d) => d.type === category);
+    if (status) {
+      list = list.filter((d) => {
+        const dl = daysLeft(d.expiry);
+        if (status === 'expired') return dl < 0;
+        if (status === 'soon') return dl >= 0 && dl <= 30;
+        return dl > 30;
+      });
+    }
     const q = query.trim().toLowerCase();
     if (q) list = list.filter((d) => d.name.toLowerCase().includes(q));
     return list;
-  }, [docs, filter, category, query]);
+  }, [docs, filter, category, status, query]);
 
-  const flatMode = query.trim().length > 0 || category !== null;
+  const flatMode = query.trim().length > 0 || category !== null || status !== null;
   const needy = flatMode
     ? []
     : sorted.filter((d) => {
@@ -161,6 +183,14 @@ export default function Home() {
             </Text>
           </Pressable>
         )}
+        {status && (
+          <Pressable style={styles.filterPill} onPress={() => setStatus(null)}>
+            <Text style={styles.filterPillText}>
+              {status === 'valid' ? 'Valid' : status === 'soon' ? 'Expiring soon' : 'Expired'}{' '}
+              <Text style={styles.filterX}>✕</Text>
+            </Text>
+          </Pressable>
+        )}
 
         {flatMode ? (
           sorted.length ? (
@@ -170,19 +200,21 @@ export default function Home() {
               <Text style={styles.emptyTitle}>
                 {category ? (
                   <>No <Text style={styles.sectAccent}>{TYPE_LABELS[category]}</Text> documents here</>
+                ) : status ? (
+                  <>No <Text style={styles.sectAccent}>{status === 'valid' ? 'valid' : status === 'soon' ? 'expiring soon' : 'expired'}</Text> documents here</>
                 ) : (
                   <>No matches for <Text style={styles.sectAccent}>"{query.trim()}"</Text></>
                 )}
               </Text>
               <Text style={styles.emptySub}>
-                {category ? 'Tap the pill above to clear the filter.' : 'Try a different search.'}
+                {category || status ? 'Tap the pill above to clear the filter.' : 'Try a different search.'}
               </Text>
             </View>
           )
         ) : (
           <>
             {needy.length ? (
-              <Pressable onPress={() => router.push('/summary')}>
+              <Pressable onPress={() => router.navigate('/summary')}>
                 <LinearGradient colors={gradients.red} style={styles.alert} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
                   <Text style={styles.alertText}>
                     Uh oh — {needy.length} document{needy.length > 1 ? 's' : ''} need
