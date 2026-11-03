@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { USER_NAME, getPeople, updateDocs } from '../store';
 import { colors, fonts, gradients, radius } from '../theme';
@@ -132,26 +132,31 @@ export default function Comments({ doc }) {
         ))}
       </ScrollView>
 
-      <View style={styles.inputRow}>
-        <TextInput
-          style={styles.input}
-          value={text}
-          onChangeText={setText}
-          placeholder={editingId ? 'Edit your comment…' : 'Write a comment…'}
-          placeholderTextColor={colors.muted}
-          multiline
-        />
-        <Pressable onPress={send} disabled={!text.trim()}>
-          <LinearGradient
-            colors={text.trim() ? gradients.brand : ['#e8dfe3', '#e8dfe3']}
-            style={styles.send}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <Text style={styles.sendText}>{editingId ? '✓' : '↑'}</Text>
-          </LinearGradient>
-        </Pressable>
-      </View>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={90}
+      >
+        <View style={styles.inputRow}>
+          <TextInput
+            style={styles.input}
+            value={text}
+            onChangeText={setText}
+            placeholder={editingId ? 'Edit your comment…' : 'Write a comment…'}
+            placeholderTextColor={colors.muted}
+            multiline
+          />
+          <Pressable onPress={send} disabled={!text.trim()}>
+            <LinearGradient
+              colors={text.trim() ? gradients.brand : ['#e8dfe3', '#e8dfe3']}
+              style={styles.send}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <Text style={styles.sendText}>{editingId ? '✓' : '↑'}</Text>
+            </LinearGradient>
+          </Pressable>
+        </View>
+      </KeyboardAvoidingView>
       {editingId && (
         <Pressable onPress={() => { setEditingId(null); setText(''); }}>
           <Text style={styles.cancelEdit}>Cancel editing</Text>

@@ -3,7 +3,8 @@ import Svg, { Path } from 'react-native-svg';
 import { colors, fonts, radius } from '../theme';
 
 // Bottom sheet with a list of tappable options. Backdrop tap dismisses.
-export default function OptionSheet({ visible, title, options, selectedId, onSelect, onClose, renderRight }) {
+// Set closeOnSelect={false} to keep the sheet open after tapping (for previews).
+export default function OptionSheet({ visible, title, options, selectedId, onSelect, onClose, renderRight, closeOnSelect = true }) {
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose}>
@@ -19,7 +20,7 @@ export default function OptionSheet({ visible, title, options, selectedId, onSel
                   style={[styles.opt, sel && styles.optSel]}
                   onPress={() => {
                     onSelect(o);
-                    onClose();
+                    if (closeOnSelect) onClose();
                   }}
                 >
                   <View style={styles.optMid}>

@@ -80,6 +80,7 @@ export default function NudgesScreen() {
         options={SOUNDS.map((s) => ({ id: s, label: s }))}
         selectedId={doc.sound}
         onClose={() => setSheet(null)}
+        closeOnSelect={false}
         onSelect={(o) => {
           previewSound(o.label);
           patch((d) => ({ ...d, sound: o.label }));
@@ -95,6 +96,7 @@ export default function NudgesScreen() {
         }))}
         selectedId={toneId}
         onClose={() => setSheet(null)}
+        closeOnSelect={false}
         onSelect={(o) => patch((d) => ({ ...d, tone: o.id }))}
       />
     </SafeAreaView>

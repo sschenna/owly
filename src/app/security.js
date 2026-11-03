@@ -4,11 +4,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import * as LocalAuth from 'expo-local-authentication';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import PinPad from '../components/PinPad';
 import RowItem from '../components/RowItem';
 import OptionSheet from '../components/OptionSheet';
 import { clearPin, hasPin, setPin, verifyPin, wrongPinJoke } from '../lib/pin';
 import { colors, fonts, gradients, radius } from '../theme';
+
+const BIO_KEY = 'owly-biometric-v1';
 
 // Security & PIN: set, change, or remove the app lock PIN.
 // The PIN lives in the OS keychain — never in app storage.
@@ -18,10 +22,45 @@ export default function Security() {
   const [temp, setTemp] = useState('');
   const [notice, setNotice] = useState('');
   const [removeAsk, setRemoveAsk] = useState(false);
+  const [bioOn, setBioOn] = useState(false);
+  const [bioAvail, setBioAvail] = useState(false);
+  const [bioType, setBioType] = useState('');
 
   useEffect(() => {
     hasPin().then(setPinned);
+    AsyncStorage.getItem(BIO_KEY).then((v) => setBioOn(v === '1'));
+    (async () => {
+      try {
+        const ok = await LocalAuth.hasHardwareAsync();
+        const enrolled = await LocalAuth.isEnrolledAsync();
+        if (ok && enrolled) {
+          setBioAvail(true);
+          const types = await LocalAuth.supportedAuthenticationTypesAsync();
+          // 1 = fingerprint, 2 = facial
+          setBioType(types.includes(2) ? 'Face ID' : types.includes(1) ? 'Fingerprint' : 'Biometric');
+        }
+      } catch (e) {}
+    })();
   }, []);
+
+  const toggleBio = async () => {
+    if (!bioOn) {
+      // Turning on — verify it's really the owner first.
+      try {
+        const res = await LocalAuth.authenticateAsync({
+          promptMessage: 'Unlock Owly with ' + (bioType || 'biometrics'),
+          fallbackLabel: 'Use PIN instead',
+        });
+        if (res.success) {
+          await AsyncStorage.setItem(BIO_KEY, '1');
+          setBioOn(true);
+        }
+      } catch (e) {}
+    } else {
+      await AsyncStorage.removeItem(BIO_KEY);
+      setBioOn(false);
+    }
+  };
 
   const backToMenu = () => {
     setMode('menu');
@@ -94,12 +133,20 @@ export default function Security() {
         {mode === 'menu' ? (
           <View style={styles.card}>
             {!pinned ? (
-              <RowItem label="Set app PIN" value="Off" onPress={() => setMode('enter')} last />
+              <RowItem label="Set app PIN" value="Off" onPress={() => setMode('enter')} last={!bioAvail} />
             ) : (
               <>
                 <RowItem label="Change PIN" value="••••" onPress={() => setMode('verify-change')} />
-                <RowItem label="Remove PIN" value="" valueColor={colors.red} onPress={() => setMode('verify-remove')} last />
+                <RowItem label="Remove PIN" value="" valueColor={colors.red} onPress={() => setMode('verify-remove')} last={!bioAvail} />
               </>
+            )}
+            {bioAvail && (
+              <RowItem
+                label={`${bioType || 'Biometric'} unlock`}
+                value={bioOn ? 'On' : 'Off'}
+                onPress={toggleBio}
+                last
+              />
             )}
           </View>
         ) : (
