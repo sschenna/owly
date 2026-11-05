@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -8,6 +9,9 @@ import OptionSheet from '../components/OptionSheet';
 import { USER_NAME, getDocs, updateDocs, updatePeople, usePeople } from '../store';
 import { colors, fonts, gradients, radius } from '../theme';
 import { initials } from '../lib/format';
+import Tap from '../components/Tap';
+import KbAvoid from '../components/KbAvoid';
+import SwipeRow from '../components/SwipeRow';
 
 const PALETTE = ['#f2668b', '#b388ff', '#0ea5e9', '#10b981', '#f59e0b', '#8b5cf6'];
 const uid = () => `p-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
@@ -41,13 +45,19 @@ export default function People() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Pressable style={styles.back} onPress={() => router.back()}>
+      <KbAvoid>
+      <KeyboardAwareScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        enableOnAndroid
+        extraScrollHeight={20}
+      >
+        <Tap style={styles.back} onPress={() => router.back()}>
           <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.coral} strokeWidth={2.6}>
             <Path d="M15 6l-6 6 6 6" />
           </Svg>
           <Text style={styles.backText}>Profile</Text>
-        </Pressable>
+        </Tap>
 
         <Text style={styles.title}>People</Text>
         <Text style={styles.sub}>Whose documents is Owly watching?</Text>
@@ -63,18 +73,20 @@ export default function People() {
             </View>
           </View>
           {people.map((p) => (
-            <Pressable key={p.id} style={styles.row} onPress={() => setDelPerson(p)}>
-              <View style={[styles.avatar, { backgroundColor: p.color }]}>
-                <Text style={styles.avatarText}>{initials(p.name)}</Text>
-              </View>
-              <View style={styles.mid}>
-                <Text style={styles.name}>{p.name}</Text>
-                <Text style={styles.count}>{countFor(p.id)} documents</Text>
-              </View>
-              <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.muted} strokeWidth={2.4}>
-                <Path d="M9 6l6 6-6 6" />
-              </Svg>
-            </Pressable>
+            <SwipeRow key={p.id} onDelete={() => setDelPerson(p)}>
+              <Tap style={styles.row} onPress={() => setDelPerson(p)}>
+                <View style={[styles.avatar, { backgroundColor: p.color }]}>
+                  <Text style={styles.avatarText}>{initials(p.name)}</Text>
+                </View>
+                <View style={styles.mid}>
+                  <Text style={styles.name}>{p.name}</Text>
+                  <Text style={styles.count}>{countFor(p.id)} documents</Text>
+                </View>
+                <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.muted} strokeWidth={2.4}>
+                  <Path d="M9 6l6 6-6 6" />
+                </Svg>
+              </Tap>
+            </SwipeRow>
           ))}
         </View>
 
@@ -92,7 +104,7 @@ export default function People() {
             />
             <View style={styles.swatches}>
               {PALETTE.map((c) => (
-                <Pressable
+                <Tap
                   key={c}
                   style={[styles.swatch, { backgroundColor: c }, color === c && styles.swatchOn]}
                   onPress={() => setColor(c)}
@@ -100,10 +112,10 @@ export default function People() {
               ))}
             </View>
             <View style={styles.addBtns}>
-              <Pressable style={styles.cancelBtn} onPress={() => setAdding(false)}>
+              <Tap style={styles.cancelBtn} onPress={() => setAdding(false)}>
                 <Text style={styles.cancelText}>Cancel</Text>
-              </Pressable>
-              <Pressable onPress={addPerson} disabled={!name.trim()}>
+              </Tap>
+              <Tap onPress={addPerson} disabled={!name.trim()}>
                 <LinearGradient
                   colors={name.trim() ? gradients.brand : ['#e8dfe3', '#e8dfe3']}
                   style={styles.saveBtn}
@@ -112,15 +124,16 @@ export default function People() {
                 >
                   <Text style={styles.saveText}>Add person</Text>
                 </LinearGradient>
-              </Pressable>
+              </Tap>
             </View>
           </View>
         ) : (
-          <Pressable style={styles.addMore} onPress={() => setAdding(true)}>
+          <Tap style={styles.addMore} onPress={() => setAdding(true)}>
             <Text style={styles.addMoreText}>+ Add person</Text>
-          </Pressable>
+          </Tap>
         )}
-      </ScrollView>
+      </KeyboardAwareScrollView>
+      </KbAvoid>
 
       <OptionSheet
         visible={delPerson !== null}

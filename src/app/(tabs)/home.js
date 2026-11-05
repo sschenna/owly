@@ -1,39 +1,35 @@
 import { useCallback, useMemo, useState } from 'react';
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, View,  } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
 import { router, useFocusEffect } from 'expo-router';
 import DocRow from '../../components/DocRow';
+import SwipeRow from '../../components/SwipeRow';
+import OptionSheet from '../../components/OptionSheet';
 import Owly from '../../components/Owly';
 import TopBar from '../../components/TopBar';
-import { USER_NAME, consumeFilter, useDocs, usePeople } from '../../store';
+import { USER_NAME, consumeFilter, updateDocs, useDocs, usePeople } from '../../store';
 import { daysLeft } from '../../lib/dates';
 import { TYPE_LABELS } from '../../data/seed';
 import { colors, fonts, gradients, radius } from '../../theme';
+import Tap from '../../components/Tap';
 
 function Chip({ label, color, selected, onPress }) {
   return (
-    <Pressable
+    <Tap
       style={[styles.chip, selected && styles.chipOn]}
       onPress={onPress}
     >
       {color ? <View style={[styles.chipDot, { backgroundColor: color }]} /> : null}
       <Text style={[styles.chipText, selected && styles.chipTextOn]}>{label}</Text>
-    </Pressable>
+    </Tap>
   );
 }
 
 function SectionHead({ title, accent, count, open, onToggle }) {
   return (
-    <Pressable style={styles.sect} onPress={onToggle}>
+    <Tap style={styles.sect} onPress={onToggle}>
       <Text style={styles.sectTitle}>
         {title} <Text style={styles.sectAccent}>{accent}</Text>
       </Text>
@@ -51,7 +47,7 @@ function SectionHead({ title, accent, count, open, onToggle }) {
       >
         <Path d="M6 9l6 6-6 6" />
       </Svg>
-    </Pressable>
+    </Tap>
   );
 }
 
@@ -64,6 +60,7 @@ export default function Home() {
   const [status, setStatus] = useState(null); // null | 'valid' | 'soon' | 'expired'
   const [chillOpen, setChillOpen] = useState(false);
   const [needyOpen, setNeedyOpen] = useState(true);
+  const [delDoc, setDelDoc] = useState(null);
 
   // Arriving from Summary/Coverage with a filter request (owner, category, or
   // status). Each filter type resets the others so stale combinations can't
@@ -119,8 +116,16 @@ export default function Home() {
     id === 'me' ? { id: 'me', name: USER_NAME } : people.find((p) => p.id === id);
 
   const renderDoc = (d) => (
-    <DocRow key={d.id} doc={d} owner={ownerOf(d.owner)} onPress={() => router.push(`/doc/${d.id}`)} />
+    <SwipeRow key={d.id} onDelete={() => setDelDoc(d)}>
+      <DocRow doc={d} owner={ownerOf(d.owner)} onPress={() => router.push(`/doc/${d.id}`)} />
+    </SwipeRow>
   );
+
+  const confirmDelete = () => {
+    if (!delDoc) return;
+    updateDocs((ds) => ds.filter((x) => x.id !== delDoc.id));
+    setDelDoc(null);
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -135,6 +140,16 @@ export default function Home() {
           hasAlerts={needy.length > 0}
         />
 
+        <LinearGradient colors={gradients.brand} style={styles.hero} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+          <View style={styles.heroLeft}>
+            <Text style={styles.heroHead}>NEVER MISS{'\n'}AN EXPIRY</Text>
+            <Tap style={styles.startBtn} onPress={() => router.push('/add')}>
+              <Text style={styles.startText}>Start</Text>
+            </Tap>
+          </View>
+          <Owly size={104} mood={needy.length ? 'chill' : 'happy'} hideCaption />
+        </LinearGradient>
+
         <View style={styles.searchRow}>
           <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.muted} strokeWidth={2}>
             <Path d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14z" />
@@ -148,16 +163,6 @@ export default function Home() {
             onChangeText={setQuery}
           />
         </View>
-
-        <LinearGradient colors={gradients.brand} style={styles.hero} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-          <View style={styles.heroLeft}>
-            <Text style={styles.heroHead}>NEVER MISS{'\n'}AN EXPIRY</Text>
-            <Pressable style={styles.startBtn} onPress={() => router.push('/add')}>
-              <Text style={styles.startText}>Start</Text>
-            </Pressable>
-          </View>
-          <Owly size={104} mood={needy.length ? 'chill' : 'happy'} hideCaption />
-        </LinearGradient>
 
         <ScrollView
           horizontal
@@ -178,19 +183,19 @@ export default function Home() {
         </ScrollView>
 
         {category && (
-          <Pressable style={styles.filterPill} onPress={() => setCategory(null)}>
+          <Tap style={styles.filterPill} onPress={() => setCategory(null)}>
             <Text style={styles.filterPillText}>
               {TYPE_LABELS[category] || category} <Text style={styles.filterX}>✕</Text>
             </Text>
-          </Pressable>
+          </Tap>
         )}
         {status && (
-          <Pressable style={styles.filterPill} onPress={() => setStatus(null)}>
+          <Tap style={styles.filterPill} onPress={() => setStatus(null)}>
             <Text style={styles.filterPillText}>
               {status === 'valid' ? 'Valid' : status === 'soon' ? 'Expiring soon' : 'Expired'}{' '}
               <Text style={styles.filterX}>✕</Text>
             </Text>
-          </Pressable>
+          </Tap>
         )}
 
         {flatMode ? (
@@ -215,14 +220,14 @@ export default function Home() {
         ) : (
           <>
             {needy.length ? (
-              <Pressable onPress={() => router.navigate('/summary')}>
+              <Tap onPress={() => router.navigate('/summary')}>
                 <LinearGradient colors={gradients.red} style={styles.alert} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
                   <Text style={styles.alertText}>
                     Uh oh — {needy.length} document{needy.length > 1 ? 's' : ''} need
                     {needy.length > 1 ? '' : 's'} you now!
                   </Text>
                 </LinearGradient>
-              </Pressable>
+              </Tap>
             ) : (
               <LinearGradient colors={gradients.green} style={styles.alert} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
                 <Text style={styles.alertText}>All clear — everyone's on best behavior.</Text>
@@ -262,6 +267,14 @@ export default function Home() {
           </>
         )}
       </ScrollView>
+
+      <OptionSheet
+        visible={!!delDoc}
+        title="Delete this document?"
+        options={delDoc ? [{ id: 'del', label: `Delete "${delDoc.name}"`, sub: 'Gone for good — no undo', destructive: true }] : []}
+        onClose={() => setDelDoc(null)}
+        onSelect={confirmDelete}
+      />
     </SafeAreaView>
   );
 }

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -11,6 +11,7 @@ import { requestFilter, useDocs, usePeople } from '../../store';
 import { daysLeft, fmtD, parseIso } from '../../lib/dates';
 import { TYPE_LABELS } from '../../data/seed';
 import { colors, fonts, gradients, radius } from '../../theme';
+import Tap from '../../components/Tap';
 
 // ---- status buckets, shared by stats / chart / categories / coverage ----
 export function bucket(docs) {
@@ -89,11 +90,11 @@ function StatIcon({ kind }) {
 
 function StatCard({ kind, num, label, onPress }) {
   return (
-    <Pressable style={styles.statCard} onPress={onPress}>
+    <Tap style={styles.statCard} onPress={onPress}>
       <StatIcon kind={kind} />
       <Text style={styles.statNum}>{num}</Text>
       <Text style={styles.statLbl}>{label}</Text>
-    </Pressable>
+    </Tap>
   );
 }
 
@@ -158,17 +159,17 @@ export default function Summary() {
           <>
             <View style={styles.cardHead}>
               <Text style={styles.cardTitle}>Upcoming Expirations</Text>
-              <Pressable style={styles.rangeBtn} onPress={pickRange}>
+              <Tap style={styles.rangeBtn} onPress={pickRange}>
                 <Text style={styles.rangeText}>Next {range} Months</Text>
                 <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={colors.coral} strokeWidth={2.4}>
                   <Path d="M6 9l6 6-6 6" />
                 </Svg>
-              </Pressable>
+              </Tap>
             </View>
             <View style={styles.chartCard}>
               <View style={styles.bars}>
                 {bars.map((bar) => (
-                  <Pressable
+                  <Tap
                     key={bar.label}
                     style={styles.barCol}
                     onPress={() => bar.count > 0 && setMonthDocs({ label: bar.label, docs: bar.docs })}
@@ -181,7 +182,7 @@ export default function Summary() {
                       />
                     </View>
                     <Text style={styles.barLabel}>{bar.label}</Text>
-                  </Pressable>
+                  </Tap>
                 ))}
               </View>
               <Text style={styles.chartHint}>Tap a bar to see what is expiring</Text>
@@ -190,7 +191,7 @@ export default function Summary() {
             <Text style={styles.cardTitlePad}>Documents by Category</Text>
             <View style={styles.listCard}>
               {typeCounts.map(({ type, count }, i) => (
-                <Pressable
+                <Tap
                   key={type}
                   style={[styles.catRow, i === typeCounts.length - 1 && styles.catRowLast]}
                   onPress={() => openCategory(type)}
@@ -206,12 +207,12 @@ export default function Summary() {
                   <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.muted} strokeWidth={2.4}>
                     <Path d="M9 6l6 6-6 6" />
                   </Svg>
-                </Pressable>
+                </Tap>
               ))}
             </View>
 
             <Text style={styles.cardTitlePad}>Coverage by Person</Text>
-            <Pressable style={styles.coverRow} onPress={openCoverage}>
+            <Tap style={styles.coverRow} onPress={openCoverage}>
               <View style={styles.coverIcon}>
                 <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={colors.coral} strokeWidth={2} strokeLinecap="round">
                   <Path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -228,7 +229,7 @@ export default function Summary() {
               <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={colors.muted} strokeWidth={2.4}>
                 <Path d="M9 6l6 6-6 6" />
               </Svg>
-            </Pressable>
+            </Tap>
           </>
         )}
 
@@ -242,7 +243,7 @@ export default function Summary() {
           ]}
           selectedId={String(range)}
           onClose={() => setRangeOpen(false)}
-          onSelect={(o) => setRange(parseInt(o.id, 10))}
+          onSave={(o) => setRange(parseInt(o.id, 10))}
         />
         <OptionSheet
           visible={monthDocs !== null}

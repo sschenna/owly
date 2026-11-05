@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -10,6 +10,7 @@ import { SOUNDS } from '../../../data/seed';
 import { TONES, toneBody } from '../../../lib/notify';
 import { previewSound } from '../../../lib/sounds';
 import { colors, fonts, radius } from '../../../theme';
+import Tap from '../../../components/Tap';
 
 // Per-document nudge management. Editing nudges lands here —
 // never inside the doc edit form.
@@ -35,12 +36,12 @@ export default function NudgesScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Pressable style={styles.back} onPress={() => router.back()}>
+        <Tap style={styles.back} onPress={() => router.back()}>
           <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.coral} strokeWidth={2.6}>
             <Path d="M15 6l-6 6 6 6" />
           </Svg>
           <Text style={styles.backText}>Details</Text>
-        </Pressable>
+        </Tap>
 
         <Text style={styles.title}>Nudges</Text>
         <Text style={styles.sub}>
@@ -48,7 +49,7 @@ export default function NudgesScreen() {
         </Text>
 
         <View style={styles.optCard}>
-          <Pressable style={styles.optRow} onPress={() => setSheet('sound')}>
+          <Tap style={styles.optRow} onPress={() => setSheet('sound')}>
             <View style={styles.optMid}>
               <Text style={styles.optLabel}>Nudge sound</Text>
               <Text style={styles.optValue}>{doc.sound}</Text>
@@ -56,8 +57,8 @@ export default function NudgesScreen() {
             <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.muted} strokeWidth={2.4}>
               <Path d="M9 6l6 6-6 6" />
             </Svg>
-          </Pressable>
-          <Pressable style={[styles.optRow, styles.optLast]} onPress={() => setSheet('tone')}>
+          </Tap>
+          <Tap style={[styles.optRow, styles.optLast]} onPress={() => setSheet('tone')}>
             <View style={styles.optMid}>
               <Text style={styles.optLabel}>Nudge tone</Text>
               <Text style={styles.optValue}>{TONES[toneId].label} — {TONES[toneId].desc.toLowerCase()}</Text>
@@ -65,7 +66,7 @@ export default function NudgesScreen() {
             <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.muted} strokeWidth={2.4}>
               <Path d="M9 6l6 6-6 6" />
             </Svg>
-          </Pressable>
+          </Tap>
         </View>
         <View style={styles.tonePreview}>
           <Text style={styles.tonePreviewText}>{toneBody(toneId, doc.name, 30)}</Text>
@@ -80,8 +81,7 @@ export default function NudgesScreen() {
         options={SOUNDS.map((s) => ({ id: s, label: s }))}
         selectedId={doc.sound}
         onClose={() => setSheet(null)}
-        closeOnSelect={false}
-        onSelect={(o) => {
+        onSave={(o) => {
           previewSound(o.label);
           patch((d) => ({ ...d, sound: o.label }));
         }}
@@ -96,8 +96,7 @@ export default function NudgesScreen() {
         }))}
         selectedId={toneId}
         onClose={() => setSheet(null)}
-        closeOnSelect={false}
-        onSelect={(o) => patch((d) => ({ ...d, tone: o.id }))}
+        onSave={(o) => patch((d) => ({ ...d, tone: o.id }))}
       />
     </SafeAreaView>
   );
