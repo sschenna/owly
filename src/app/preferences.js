@@ -1,4 +1,5 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { UI_SOUNDS, playUiSound } from '../lib/sounds';
@@ -9,6 +10,14 @@ import Tap from '../components/Tap';
 // App preferences: UI sounds and other personal touches.
 export default function Preferences() {
   const s = useSettings();
+  const [ocrInput, setOcrInput] = useState(s.ocrKey || '');
+  const [ocrSaved, setOcrSaved] = useState(false);
+
+  const saveOcrKey = () => {
+    updateSettings({ ocrKey: ocrInput.trim() });
+    setOcrSaved(true);
+    setTimeout(() => setOcrSaved(false), 2000);
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -41,6 +50,38 @@ export default function Preferences() {
               )}
             </Tap>
           ))}
+        </View>
+
+        <Text style={styles.sectionTitle}>Document scanning</Text>
+        <Text style={styles.sectionSub}>
+          Owly can read expiry dates from photos. It works out of the box with a shared key — paste your own free key below for faster, more reliable scans.
+        </Text>
+        <View style={styles.card}>
+          <TextInput
+            style={styles.keyInput}
+            value={ocrInput}
+            onChangeText={(t) => { setOcrInput(t); setOcrSaved(false); }}
+            placeholder="Paste your OCR.space key (optional)"
+            placeholderTextColor={colors.muted}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <View style={styles.keyRow}>
+            <Tap style={styles.keySave} onPress={saveOcrKey}>
+              <Text style={styles.keySaveText}>{ocrSaved ? 'Saved ✓' : 'Save key'}</Text>
+            </Tap>
+            {s.ocrKey ? (
+              <Tap
+                style={styles.keyClear}
+                onPress={() => { updateSettings({ ocrKey: '' }); setOcrInput(''); }}
+              >
+                <Text style={styles.keyClearText}>Remove</Text>
+              </Tap>
+            ) : null}
+          </View>
+          <Text style={styles.keyHint}>
+            Free at ocr.space/ocrapi (25,000 scans/month). Stored only on this phone — never uploaded anywhere.
+          </Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -92,4 +133,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  keyInput: {
+    backgroundColor: colors.bg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+    fontFamily: fonts.regular,
+    color: colors.ink,
+  },
+  keyRow: { flexDirection: 'row', gap: 10, marginTop: 12 },
+  keySave: {
+    backgroundColor: colors.coral,
+    borderRadius: radius.pill,
+    paddingVertical: 11,
+    paddingHorizontal: 22,
+    alignItems: 'center',
+  },
+  keySaveText: { fontSize: 14, fontFamily: fonts.extraBold, color: '#fff' },
+  keyClear: {
+    backgroundColor: colors.bg,
+    borderRadius: radius.pill,
+    paddingVertical: 11,
+    paddingHorizontal: 18,
+    alignItems: 'center',
+  },
+  keyClearText: { fontSize: 14, fontFamily: fonts.bold, color: colors.muted },
+  keyHint: { fontSize: 12, fontFamily: fonts.regular, color: colors.muted, marginTop: 10, lineHeight: 17 },
 });
