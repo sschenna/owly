@@ -27,7 +27,9 @@ export default function Scan() {
   const [keyInput, setKeyInput] = useState('');
   const [showKey, setShowKey] = useState(false);
 
-  const apiKey = getSettings().ocrKey;
+  // Built-in demo key so scanning works out of the box. It's OCR.space's
+  // public test key (rate-limited, shared) — a user-pasted key overrides it.
+  const apiKey = getSettings().ocrKey || 'helloworld';
 
   if (!permission) {
     return (
@@ -163,6 +165,11 @@ export default function Scan() {
                   ? 'On-device scan — this photo never leaves your phone.'
                   : 'Tapping Extract sends this photo to OCR.space for text recognition — nothing else ever leaves your phone.'}
               </Text>
+              {!isLocalOcrAvailable() && !getSettings().ocrKey && (
+                <Tap onPress={() => setShowKey(true)}>
+                  <Text style={styles.ownKey}>Using the shared demo key — tap here to use your own free key instead</Text>
+                </Tap>
+              )}
             </View>
           ) : candidates.length === 0 ? (
             <View style={styles.actions}>
@@ -252,6 +259,7 @@ const styles = StyleSheet.create({
   later: { marginTop: 14, padding: 8 },
   laterText: { fontSize: 15, fontFamily: fonts.bold, color: colors.coral },
   fine: { fontSize: 12, fontFamily: fonts.regular, color: colors.muted, textAlign: 'center', marginTop: 14, lineHeight: 18, paddingHorizontal: 10 },
+  ownKey: { fontSize: 12, fontFamily: fonts.bold, color: colors.coral, textAlign: 'center', marginTop: 8, textDecorationLine: 'underline' },
   error: { fontSize: 14, fontFamily: fonts.bold, color: colors.red, textAlign: 'center', marginTop: 12 },
   pickTitle: { fontSize: 17, fontFamily: fonts.extraBold, color: colors.ink, marginBottom: 10 },
   cand: {
