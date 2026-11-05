@@ -1,26 +1,27 @@
 import { useEffect, useState } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
 import { router } from 'expo-router';
 import TimeSheet from '../components/TimeSheet';
 import { ensurePushPermission, pushPermissionStatus, sendTestNudge, TONES, toneBody } from '../lib/notify';
-import { previewSound, UI_SOUNDS, playUiSound } from '../lib/sounds';
+import { previewSound } from '../lib/sounds';
 import { SOUNDS } from '../data/seed';
 import { updateSettings, useSettings } from '../store';
 import { colors, fonts, gradients, radius } from '../theme';
+import Tap from '../components/Tap';
 
 function Toggle({ on, onFlip }) {
   return (
-    <Pressable
+    <Tap
       style={[styles.toggle, on && styles.toggleOn]}
       onPress={onFlip}
       accessibilityRole="switch"
       accessibilityState={{ checked: on }}
     >
       <View style={[styles.knob, on && styles.knobOn]} />
-    </Pressable>
+    </Tap>
   );
 }
 
@@ -96,12 +97,12 @@ export default function Notifications() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Pressable style={styles.back} onPress={() => router.back()}>
+        <Tap style={styles.back} onPress={() => router.back()}>
           <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.coral} strokeWidth={2.6}>
             <Path d="M15 6l-6 6 6 6" />
           </Svg>
           <Text style={styles.backText}>Profile</Text>
-        </Pressable>
+        </Tap>
 
         <Text style={styles.title}>Notifications</Text>
         <Text style={styles.sub}>How should Owly get your attention?</Text>
@@ -131,7 +132,7 @@ export default function Notifications() {
         <Text style={styles.sectionSub}>Tap to hear it — the checkmark is the default for new documents.</Text>
         <View style={styles.card}>
           {SOUNDS.map((name, i) => (
-            <Pressable
+            <Tap
               key={name}
               style={[styles.soundRow, i === SOUNDS.length - 1 && styles.last]}
               onPress={() => pickSound(name)}
@@ -145,7 +146,7 @@ export default function Notifications() {
                   <Path d="M8 5v14l11-7z" />
                 </Svg>
               </View>
-            </Pressable>
+            </Tap>
           ))}
         </View>
 
@@ -153,7 +154,7 @@ export default function Notifications() {
         <Text style={styles.sectionSub}>How should Owly word your nudges? Here is a taste:</Text>
         <View style={styles.toneWrap}>
           {Object.entries(TONES).map(([id, t]) => (
-            <Pressable
+            <Tap
               key={id}
               style={[styles.toneCard, s.tone === id && styles.toneCardOn]}
               onPress={() => updateSettings({ tone: id })}
@@ -168,16 +169,16 @@ export default function Notifications() {
               <View style={styles.toneExample}>
                 <Text style={styles.toneExampleText}>{toneBody(id, 'Passport', 30)}</Text>
               </View>
-            </Pressable>
+            </Tap>
           ))}
         </View>
 
         <Text style={styles.sectionTitle}>Test it out</Text>
-        <Pressable onPress={doTest}>
+        <Tap onPress={doTest}>
           <LinearGradient colors={gradients.brand} style={styles.testBtn} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
             <Text style={styles.testText}>Send me a test nudge</Text>
           </LinearGradient>
-        </Pressable>
+        </Tap>
         {testMsg ? <Text style={styles.testMsg}>{testMsg}</Text> : null}
         {mockBanner && (
           <View style={styles.mockBanner}>
@@ -186,33 +187,6 @@ export default function Notifications() {
             <Text style={styles.mockNote}>On your phone this arrives as a real notification, even with Owly closed.</Text>
           </View>
         )}
-
-        <Text style={styles.sectionTitle}>UI sounds</Text>
-        <Text style={styles.sectionSub}>Funny blips for taps and buttons. Tap to hear it.</Text>
-        <View style={styles.card}>
-          {UI_SOUNDS.map((name, i) => (
-            <Pressable
-              key={name}
-              style={[styles.soundRow, i === UI_SOUNDS.length - 1 && styles.last]}
-              onPress={() => {
-                playUiSound(name);
-                updateSettings({ uiSound: name });
-              }}
-            >
-              <View style={[styles.radio, s.uiSound === name && styles.radioOn]}>
-                {s.uiSound === name && <Text style={styles.radioTick}>✓</Text>}
-              </View>
-              <Text style={styles.label}>{name}</Text>
-              {name !== 'Silent' && (
-                <View style={styles.playBtn}>
-                  <Svg width={16} height={16} viewBox="0 0 24 24" fill={colors.coral}>
-                    <Path d="M8 5v14l11-7z" />
-                  </Svg>
-                </View>
-              )}
-            </Pressable>
-          ))}
-        </View>
 
         <Text style={styles.sectionTitle}>Quiet hours</Text>
         <View style={styles.card}>
@@ -224,14 +198,14 @@ export default function Notifications() {
           />
           {s.quietHours && (
             <>
-              <Pressable style={styles.timeRow} onPress={() => setTimeFor('start')}>
+              <Tap style={styles.timeRow} onPress={() => setTimeFor('start')}>
                 <Text style={styles.label}>From</Text>
                 <Text style={styles.timeVal}>{s.quietStart}</Text>
-              </Pressable>
-              <Pressable style={[styles.timeRow, styles.last]} onPress={() => setTimeFor('end')}>
+              </Tap>
+              <Tap style={[styles.timeRow, styles.last]} onPress={() => setTimeFor('end')}>
                 <Text style={styles.label}>Until</Text>
                 <Text style={styles.timeVal}>{s.quietEnd}</Text>
-              </Pressable>
+              </Tap>
             </>
           )}
         </View>

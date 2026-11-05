@@ -1,19 +1,23 @@
-import { useMemo } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { router } from 'expo-router';
 import DocIcon from '../components/DocIcon';
+import OptionSheet from '../components/OptionSheet';
+import SwipeRow from '../components/SwipeRow';
 import { getPeople, updateDocs, useDocs } from '../store';
 import { colors, fonts, radius } from '../theme';
 import { effDate } from '../lib/nudges';
 import { fmtD, isoOf, parseIso, todayIso } from '../lib/dates';
+import Tap from '../components/Tap';
 
 // The nudge inbox — every nudge across every document, upcoming and past.
 // Past nudges are delete-only; upcoming ones can be deleted too.
 export default function Inbox() {
   const docs = useDocs();
   const people = getPeople();
+  const [clearAsk, setClearAsk] = useState(false);
 
   const { upcoming, past } = useMemo(() => {
     const today = parseIso(todayIso());
@@ -46,6 +50,13 @@ export default function Inbox() {
       ),
     );
 
+  const clearAll = () => {
+    setClearAsk(false);
+    updateDocs((ds) => ds.map((d) => ({ ...d, reminders: [] })));
+  };
+
+  const total = upcoming.length + past.length;
+
   const ownerOf = (id) => {
     if (id === 'me') return null;
     return people.find((p) => p.id === id);
@@ -55,43 +66,51 @@ export default function Inbox() {
     const doc = docs.find((d) => d.id === item.docId);
     const owner = doc ? ownerOf(doc.owner) : null;
     return (
-      <View key={item.key} style={styles.row}>
-        <Pressable style={styles.main} onPress={() => router.push(`/doc/${item.docId}`)}>
-          <DocIcon type={item.type} size={44} />
-          <View style={styles.mid}>
-            <Text style={styles.docName} numberOfLines={1}>
-              {item.docName}
-              {owner ? <Text style={styles.owner}> · {owner.name}</Text> : null}
-            </Text>
-            <Text style={styles.detail}>
-              {item.days} {item.days === 1 ? 'day' : 'days'} before · {item.time}
-            </Text>
-            <Text style={styles.date}>{fmtD(item.iso)}</Text>
-          </View>
-        </Pressable>
-        <Pressable style={styles.del} onPress={() => deleteNudge(item)} accessibilityLabel="Delete nudge">
-          <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={colors.red} strokeWidth={2} strokeLinecap="round">
-            <Path d="M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15M10 11v6M14 11v6" />
-          </Svg>
-        </Pressable>
-      </View>
+      <SwipeRow key={item.key} onDelete={() => deleteNudge(item)}>
+        <View style={styles.row}>
+          <Tap style={styles.main} onPress={() => router.push(`/doc/${item.docId}`)}>
+            <DocIcon type={item.type} size={44} />
+            <View style={styles.mid}>
+              <Text style={styles.docName} numberOfLines={1}>
+                {item.docName}
+                {owner ? <Text style={styles.owner}> · {owner.name}</Text> : null}
+              </Text>
+              <Text style={styles.detail}>
+                {item.days} {item.days === 1 ? 'day' : 'days'} before · {item.time}
+              </Text>
+              <Text style={styles.date}>{fmtD(item.iso)}</Text>
+            </View>
+          </Tap>
+          <Tap style={styles.del} onPress={() => deleteNudge(item)} accessibilityLabel="Delete nudge">
+            <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={colors.red} strokeWidth={2} strokeLinecap="round">
+              <Path d="M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15M10 11v6M14 11v6" />
+            </Svg>
+          </Tap>
+        </View>
+      </SwipeRow>
     );
   };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Pressable style={styles.back} onPress={() => router.back()}>
+        <Tap style={styles.back} onPress={() => router.back()}>
           <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.coral} strokeWidth={2.6}>
             <Path d="M15 6l-6 6 6 6" />
           </Svg>
           <Text style={styles.backText}>Back</Text>
-        </Pressable>
+        </Tap>
 
         <Text style={styles.title}>Nudge inbox</Text>
         <Text style={styles.sub}>Everything Owly wants to tell you, in one place.</Text>
 
-        <Pressable style={styles.settingsBtn} onPress={() => router.push('/notifications')}>
+        {total > 0 && (
+          <Tap style={styles.clearBtn} onPress={() => setClearAsk(true)}>
+            <Text style={styles.clearText}>Clear all ({total})</Text>
+          </Tap>
+        )}
+
+        <Tap style={styles.settingsBtn} onPress={() => router.push('/notifications')}>
           <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.coral} strokeWidth={2}>
             <Path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" />
           </Svg>
@@ -99,7 +118,7 @@ export default function Inbox() {
           <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={colors.coral} strokeWidth={2.4}>
             <Path d="M9 6l6 6-6 6" />
           </Svg>
-        </Pressable>
+        </Tap>
 
         <Text style={styles.sectionTitle}>Upcoming</Text>
         {upcoming.length === 0 ? (
@@ -118,6 +137,14 @@ export default function Inbox() {
           </>
         )}
       </ScrollView>
+
+      <OptionSheet
+        visible={clearAsk}
+        title="Clear all nudges?"
+        options={[{ id: 'clear', label: `Delete all ${total} nudges`, sub: 'Gone for good — no undo', destructive: true }]}
+        onClose={() => setClearAsk(false)}
+        onSelect={clearAll}
+      />
     </SafeAreaView>
   );
 }
@@ -171,4 +198,14 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   settingsText: { flex: 1, fontSize: 15, fontFamily: fonts.extraBold, color: colors.coral },
+  clearBtn: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255,80,80,0.1)',
+    borderRadius: radius.pill,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    marginTop: 10,
+    marginBottom: 4,
+  },
+  clearText: { fontSize: 13.5, fontFamily: fonts.extraBold, color: colors.red },
 });
