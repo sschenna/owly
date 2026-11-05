@@ -1,24 +1,18 @@
 import { useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Image,
-  Linking,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Image, Linking, Platform, StyleSheet, Text, TextInput, View,  } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { router } from 'expo-router';
 import { ocrImage } from '../lib/ocr';
+import { isLocalOcrAvailable, ocrImageLocal } from '../lib/ocrLocal';
 import { fmtD } from '../lib/dates';
 import { getSettings, setScannedExpiry, updateSettings } from '../store';
 import { colors, fonts, gradients, radius } from '../theme';
+import Tap from '../components/Tap';
+import KbAvoid from '../components/KbAvoid';
 
 // Scan a document: snap a photo, extract the expiry date with OCR,
 // pick the right one. The photo is sent to OCR.space ONLY when you
@@ -52,14 +46,14 @@ export default function Scan() {
             Owly needs the camera to scan your document. The photo never leaves your phone except for the
             OCR lookup — and only when you tap Extract.
           </Text>
-          <Pressable onPress={requestPermission}>
+          <Tap onPress={requestPermission}>
             <LinearGradient colors={gradients.brand} style={styles.btn} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
               <Text style={styles.btnText}>Allow camera</Text>
             </LinearGradient>
-          </Pressable>
-          <Pressable style={styles.later} onPress={() => router.back()}>
+          </Tap>
+          <Tap style={styles.later} onPress={() => router.back()}>
             <Text style={styles.laterText}>Maybe later</Text>
-          </Pressable>
+          </Tap>
         </View>
       </SafeAreaView>
     );
@@ -77,14 +71,19 @@ export default function Scan() {
   };
 
   const extract = async () => {
-    if (!apiKey) {
+    // Prefer on-device OCR (private, free, offline). Fall back to OCR.space
+    // when it's unavailable (Expo Go / web) — that path needs the API key.
+    const useLocal = isLocalOcrAvailable();
+    if (!useLocal && !apiKey) {
       setShowKey(true);
       return;
     }
     setBusy(true);
     setError('');
     try {
-      const { candidates } = await ocrImage(photo.base64, apiKey);
+      const { candidates } = useLocal
+        ? await ocrImageLocal(photo.uri)
+        : await ocrImage(photo.base64, apiKey);
       setCandidates(candidates);
     } catch (e) {
       setError(e.message);
@@ -107,13 +106,14 @@ export default function Scan() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
+      <KbAvoid offset={0}>
       <View style={styles.header}>
-        <Pressable style={styles.back} onPress={() => router.back()}>
+        <Tap style={styles.back} onPress={() => router.back()}>
           <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.coral} strokeWidth={2.6}>
             <Path d="M15 6l-6 6 6 6" />
           </Svg>
           <Text style={styles.backText}>Back</Text>
-        </Pressable>
+        </Tap>
         <Text style={styles.headerTitle}>Scan document</Text>
         <View style={styles.back} />
       </View>
@@ -125,18 +125,23 @@ export default function Scan() {
             <View style={styles.frameBox} />
             <Text style={styles.frameHint}>Line up the expiry date</Text>
           </View>
-          <Pressable style={styles.shutterWrap} onPress={snap}>
+          <Tap style={styles.shutterWrap} onPress={snap}>
             <View style={styles.shutter} />
-          </Pressable>
+          </Tap>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.previewWrap}>
+        <KeyboardAwareScrollView
+          contentContainerStyle={styles.previewWrap}
+          keyboardShouldPersistTaps="handled"
+          enableOnAndroid
+          extraScrollHeight={20}
+        >
           <Image source={{ uri: photo.uri }} style={styles.preview} resizeMode="cover" />
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
           {candidates === null ? (
             <View style={styles.actions}>
-              <Pressable onPress={extract} disabled={busy} style={styles.actionBtn}>
+              <Tap onPress={extract} disabled={busy} style={styles.actionBtn}>
                 <LinearGradient
                   colors={busy ? ['#e8dfe3', '#e8dfe3'] : gradients.brand}
                   style={styles.btn}
@@ -149,12 +154,14 @@ export default function Scan() {
                     <Text style={styles.btnText}>Extract expiry date</Text>
                   )}
                 </LinearGradient>
-              </Pressable>
-              <Pressable style={styles.later} onPress={() => setPhoto(null)}>
+              </Tap>
+              <Tap style={styles.later} onPress={() => setPhoto(null)}>
                 <Text style={styles.laterText}>Retake</Text>
-              </Pressable>
+              </Tap>
               <Text style={styles.fine}>
-                Tapping Extract sends this photo to OCR.space for text recognition — nothing else ever leaves your phone.
+                {isLocalOcrAvailable()
+                  ? 'On-device scan — this photo never leaves your phone.'
+                  : 'Tapping Extract sends this photo to OCR.space for text recognition — nothing else ever leaves your phone.'}
               </Text>
             </View>
           ) : candidates.length === 0 ? (
@@ -163,22 +170,22 @@ export default function Scan() {
               <Text style={styles.noneSub}>
                 The scan couldn\u2019t spot an expiry date. Try a clearer photo — or just pick the date yourself.
               </Text>
-              <Pressable style={styles.later} onPress={() => setPhoto(null)}>
+              <Tap style={styles.later} onPress={() => setPhoto(null)}>
                 <Text style={styles.laterText}>Retake photo</Text>
-              </Pressable>
+              </Tap>
             </View>
           ) : (
             <View style={styles.actions}>
               <Text style={styles.pickTitle}>Which one\u2019s the expiry?</Text>
               {candidates.map((c) => (
-                <Pressable key={c.iso} style={styles.cand} onPress={() => pick(c.iso)}>
+                <Tap key={c.iso} style={styles.cand} onPress={() => pick(c.iso)}>
                   <Text style={styles.candDate}>{fmtD(c.iso)}</Text>
                   <Text style={styles.candRaw}>read as \u201c{c.raw}\u201d</Text>
-                </Pressable>
+                </Tap>
               ))}
-              <Pressable style={styles.later} onPress={() => setPhoto(null)}>
+              <Tap style={styles.later} onPress={() => setPhoto(null)}>
                 <Text style={styles.laterText}>None of these — retake</Text>
-              </Pressable>
+              </Tap>
             </View>
           )}
 
@@ -200,7 +207,7 @@ export default function Scan() {
                 placeholderTextColor={colors.muted}
                 autoCapitalize="none"
               />
-              <Pressable onPress={saveKey} disabled={!keyInput.trim()}>
+              <Tap onPress={saveKey} disabled={!keyInput.trim()}>
                 <LinearGradient
                   colors={keyInput.trim() ? gradients.brand : ['#e8dfe3', '#e8dfe3']}
                   style={styles.btn}
@@ -209,11 +216,12 @@ export default function Scan() {
                 >
                   <Text style={styles.btnText}>Save key</Text>
                 </LinearGradient>
-              </Pressable>
+              </Tap>
             </View>
           )}
-        </ScrollView>
+        </KeyboardAwareScrollView>
       )}
+      </KbAvoid>
     </SafeAreaView>
   );
 }

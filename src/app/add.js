@@ -1,12 +1,6 @@
 import { useState } from 'react';
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { StyleSheet, Text, TextInput, View,  } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -21,6 +15,8 @@ import { CATS, normalizeDoc } from '../data/seed';
 import { USER_NAME, consumeScannedExpiry, getDocs, getPeople, updateDocs } from '../store';
 import { colors, fonts, gradients, radius } from '../theme';
 import { fmtD, todayIso } from '../lib/dates';
+import Tap from '../components/Tap';
+import KbAvoid from '../components/KbAvoid';
 
 const TYPES = Object.keys(CATS);
 const uid = () => `d-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
@@ -104,9 +100,15 @@ export default function Add() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <KbAvoid>
+      <KeyboardAwareScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        enableOnAndroid
+        extraScrollHeight={20}
+      >
         <View style={styles.header}>
-          <Pressable
+          <Tap
             style={styles.back}
             onPress={() => (step > 1 ? setStep(step - 1) : router.back())}
           >
@@ -114,7 +116,7 @@ export default function Add() {
               <Path d="M15 6l-6 6 6 6" />
             </Svg>
             <Text style={styles.backText}>Back</Text>
-          </Pressable>
+          </Tap>
           <View style={styles.dots}>
             {Array.from({ length: steps }, (_, i) => (
               <View key={i} style={[styles.dot, i + 1 <= step && styles.dotOn]} />
@@ -135,14 +137,14 @@ export default function Add() {
         {step === 1 && (
           <View style={styles.grid}>
             {TYPES.map((t) => (
-              <Pressable
+              <Tap
                 key={t}
                 style={[styles.typeCard, type === t && styles.typeCardOn]}
                 onPress={() => pickType(t)}
               >
                 <DocIcon type={t} size={52} />
                 <Text style={styles.typeLabel}>{CATS[t].label}</Text>
-              </Pressable>
+              </Tap>
             ))}
           </View>
         )}
@@ -169,7 +171,7 @@ export default function Add() {
               />
             </View>
             {notice ? <Text style={styles.notice}>{notice}</Text> : null}
-            <Pressable
+            <Tap
               onPress={() => {
                 if (!canNext2()) return;
                 if (editing) save();
@@ -180,21 +182,21 @@ export default function Add() {
               <LinearGradient colors={gradients.brand} style={styles.next} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
                 <Text style={styles.nextText}>{editing ? 'Save changes' : 'Continue'}</Text>
               </LinearGradient>
-            </Pressable>
+            </Tap>
           </View>
         )}
 
         {step === 3 && !editing && (
           <View>
             <NudgeList reminders={draft} onChange={setDraft} expiry={expiry} />
-            <Pressable onPress={save} style={styles.nextWrap}>
+            <Tap onPress={save} style={styles.nextWrap}>
               <LinearGradient colors={gradients.brand} style={styles.next} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
                 <Text style={styles.nextText}>Track it!</Text>
               </LinearGradient>
-            </Pressable>
+            </Tap>
           </View>
         )}
-      </ScrollView>
+      </KeyboardAwareScrollView>
 
       <OptionSheet
         visible={expiryHow}
@@ -226,8 +228,9 @@ export default function Add() {
         ]}
         selectedId={owner}
         onClose={() => setOwnerOpen(false)}
-        onSelect={(o) => setOwner(o.id)}
+        onSave={(o) => setOwner(o.id)}
       />
+      </KbAvoid>
     </SafeAreaView>
   );
 }

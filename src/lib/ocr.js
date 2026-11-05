@@ -27,7 +27,12 @@ const PATS = [
   /\b(\d{4})[\-\/](\d{1,2})[\-\/](\d{1,2})\b/g,
   // 12/25/2028 or 25/12/2028 (ambiguous — try both)
   /\b(\d{1,2})[\/\.\-](\d{1,2})[\/\.\-](\d{4})\b/g,
+  // EXP 12/27 or 12/27 (MM/YY — common on packaging/meds). Day = end of month.
+  /\b(\d{1,2})[\/](\d{2})\b/g,
 ];
+
+/** Last day of a month (for MM/YY dates). */
+const endOfMonth = (y, m) => new Date(y, m, 0).getDate();
 
 /** Pull {iso, raw} date candidates out of OCR text. Expiry-ish lines first. */
 export function findDates(text) {
@@ -41,9 +46,10 @@ export function findDates(text) {
   };
 
   const lines = text.split('\n');
+  const expRe = /expir|valid (until|thru|through)|exp\b/i;
   const ordered = [
-    ...lines.filter((l) => /expir|valid (until|thru|through)|exp\.?\s*date/i.test(l)),
-    ...lines.filter((l) => !/expir|valid (until|thru|through)|exp\.?\s*date/i.test(l)),
+    ...lines.filter((l) => expRe.test(l)),
+    ...lines.filter((l) => !expRe.test(l)),
   ];
   const joined = ordered.join('\n');
 
@@ -69,6 +75,19 @@ export function findDates(text) {
     const y = +m[3];
     // Try day-first, then month-first; keep whichever is valid.
     push(validDate(y, b, a) || validDate(y, a, b), m[0]);
+  }
+  // MM/YY (e.g. "EXP 12/27" on packaging). Skip if it was part of a longer
+  // date already matched (avoid double-counting "12/25/2028" as "12/25").
+  const r5 = new RegExp(PATS[4].source, 'g');
+  while ((m = r5.exec(joined))) {
+    const mo = +m[1];
+    const yy = +m[2];
+    if (mo < 1 || mo > 12) continue;
+    const fullYear = 2000 + yy;
+    // Don't re-add if this MM/YY is inside an already-found longer date.
+    const alreadyCovered = out.some((c) => c.raw.includes(m[0]) && c.raw.length > m[0].length);
+    if (alreadyCovered) continue;
+    push(validDate(fullYear, mo, endOfMonth(fullYear, mo)), m[0]);
   }
   return out;
 }
