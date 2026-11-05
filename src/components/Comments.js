@@ -1,23 +1,42 @@
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { USER_NAME, getPeople, updateDocs } from '../store';
 import { colors, fonts, gradients, radius } from '../theme';
 import { initials } from '../lib/format';
 import { relTime } from '../lib/dates';
+import Tap from './Tap';
 
 const uid = () => `c-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
 
 // WhatsApp-style per-doc comments: bubbles, @-tags, edit/delete.
-export default function Comments({ doc }) {
+export default function Comments({ doc, onInputFocus }) {
   const people = getPeople();
   const [text, setText] = useState('');
   const [author, setAuthor] = useState('me');
   const [editingId, setEditingId] = useState(null);
+  const [atQuery, setAtQuery] = useState(null); // text after the active @, or null
 
   const authors = [{ id: 'me', name: USER_NAME, color: colors.coral }, ...people];
   const authorOf = (id) => authors.find((a) => a.id === id) || authors[0];
   const taggable = authors;
+
+  // Track @-mention query: text after the last @ (if no space/newline since).
+  const handleText = (t) => {
+    setText(t);
+    const m = t.match(/@([\w']*)$/);
+    setAtQuery(m ? m[1] : null);
+  };
+
+  const pickAtName = (name) => {
+    // Replace the trailing @query with @Name + space.
+    setText((t) => t.replace(/@[\w']*$/, `@${name} `));
+    setAtQuery(null);
+  };
+
+  const atSuggestions = atQuery === null ? [] : taggable.filter((a) =>
+    a.name.toLowerCase().startsWith(atQuery.toLowerCase())
+  );
 
   const saveComments = (comments) =>
     updateDocs((ds) => ds.map((d) => (d.id === doc.id ? { ...d, comments } : d)));
@@ -32,6 +51,7 @@ export default function Comments({ doc }) {
       saveComments([...doc.comments, { id: uid(), author, text: t, ts: Date.now() }]);
     }
     setText('');
+    setAtQuery(null);
   };
 
   const bubbleMenu = (c) => {
@@ -88,7 +108,7 @@ export default function Comments({ doc }) {
                 <Text style={styles.avatarText}>{initials(a.name)}</Text>
               </View>
             )}
-            <Pressable
+            <Tap
               style={styles.bubbleWrap}
               onPress={() => bubbleMenu(c)}
             >
@@ -103,7 +123,7 @@ export default function Comments({ doc }) {
                 </View>
               )}
               <Text style={[styles.ts, mine && styles.tsMine]}>{relTime(c.ts)}</Text>
-            </Pressable>
+            </Tap>
           </View>
         );
       })}
@@ -111,7 +131,7 @@ export default function Comments({ doc }) {
       <Text style={styles.commentAs}>Comment as</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.authors}>
         {authors.map((a) => (
-          <Pressable
+          <Tap
             key={a.id}
             style={[styles.authorChip, author === a.id && styles.authorChipOn]}
             onPress={() => setAuthor(a.id)}
@@ -120,28 +140,45 @@ export default function Comments({ doc }) {
             <Text style={[styles.authorChipText, author === a.id && styles.authorChipTextOn]}>
               {a.id === 'me' ? 'Me' : a.name}
             </Text>
-          </Pressable>
+          </Tap>
         ))}
       </ScrollView>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tags}>
         {taggable.map((a) => (
-          <Pressable key={a.id} style={styles.tag} onPress={() => tag(a.name)}>
+          <Tap key={a.id} style={styles.tag} onPress={() => tag(a.name)}>
             <Text style={styles.tagText}>@{a.id === 'me' ? USER_NAME : a.name}</Text>
-          </Pressable>
+          </Tap>
         ))}
       </ScrollView>
 
       <View style={styles.inputRow}>
-        <TextInput
-          style={styles.input}
-          value={text}
-          onChangeText={setText}
-          placeholder={editingId ? 'Edit your comment…' : 'Write a comment…'}
-          placeholderTextColor={colors.muted}
-          multiline
-        />
-        <Pressable onPress={send} disabled={!text.trim()}>
+        <View style={styles.inputWrap}>
+          {atSuggestions.length > 0 && (
+            <View style={styles.suggestBox}>
+              {atSuggestions.map((a) => (
+                <Tap
+                  key={a.id}
+                  style={styles.suggestRow}
+                  onPress={() => pickAtName(a.name)}
+                >
+                  <View style={[styles.dot, { backgroundColor: a.color }]} />
+                  <Text style={styles.suggestText}>{a.name}</Text>
+                </Tap>
+              ))}
+            </View>
+          )}
+          <TextInput
+            style={styles.input}
+            value={text}
+            onChangeText={handleText}
+            onFocus={onInputFocus}
+            placeholder={editingId ? 'Edit your comment…' : 'Write a comment…'}
+            placeholderTextColor={colors.muted}
+            multiline
+          />
+        </View>
+        <Tap onPress={send} disabled={!text.trim()}>
           <LinearGradient
             colors={text.trim() ? gradients.brand : ['#e8dfe3', '#e8dfe3']}
             style={styles.send}
@@ -150,12 +187,12 @@ export default function Comments({ doc }) {
           >
             <Text style={styles.sendText}>{editingId ? '✓' : '↑'}</Text>
           </LinearGradient>
-        </Pressable>
+        </Tap>
       </View>
       {editingId && (
-        <Pressable onPress={() => { setEditingId(null); setText(''); }}>
+        <Tap onPress={() => { setEditingId(null); setText(''); }}>
           <Text style={styles.cancelEdit}>Cancel editing</Text>
-        </Pressable>
+        </Tap>
       )}
     </View>
   );
@@ -191,6 +228,27 @@ const styles = StyleSheet.create({
   tag: { backgroundColor: 'rgba(242,102,139,0.12)', borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 7 },
   tagText: { fontSize: 12.5, fontFamily: fonts.extraBold, color: colors.coral },
   inputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, marginTop: 12 },
+  inputWrap: { flex: 1, position: 'relative' },
+  suggestBox: {
+    position: 'absolute',
+    bottom: '100%',
+    left: 0,
+    right: 0,
+    marginBottom: 6,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 14,
+    overflow: 'hidden',
+    zIndex: 20,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  suggestRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: colors.border },
+  suggestText: { fontSize: 14, fontFamily: fonts.bold, color: colors.ink },
   input: {
     flex: 1,
     backgroundColor: colors.surface,
