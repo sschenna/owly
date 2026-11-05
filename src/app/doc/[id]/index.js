@@ -1,16 +1,6 @@
-import { useState } from 'react';
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { useRef, useState } from 'react';
+import { Alert, KeyboardAvoidingView, Modal, Platform, StyleSheet, Text, TextInput, View,  } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -26,6 +16,8 @@ import { daysLeft, fmtD, todayIso } from '../../../lib/dates';
 import { NAG_FREQS, PARTNERS, REPEAT_OPTIONS, SOUNDS } from '../../../data/seed';
 import { previewSound } from '../../../lib/sounds';
 import { initials } from '../../../lib/format';
+import Tap from '../../../components/Tap';
+import SwipeRow from '../../../components/SwipeRow';
 
 // Document detail: countdown hero, editable rows, checklist,
 // renewal history, partner card, comments. Tapping the Expiry date
@@ -35,6 +27,7 @@ export default function Detail() {
   const docs = useDocs();
   const people = getPeople();
   const doc = docs.find((d) => d.id === id);
+  const scrollRef = useRef(null);
 
   const [sheet, setSheet] = useState(null); // repeat | nag | sound
   const [cal, setCal] = useState(null); // { mode: 'correct' | 'renew' }
@@ -43,6 +36,7 @@ export default function Detail() {
   const [feeOpen, setFeeOpen] = useState(false);
   const [fee, setFee] = useState('');
   const [renewDate, setRenewDate] = useState(null);
+  const [checkEdit, setCheckEdit] = useState(null); // null | {index: -1 for new, or i} + text
 
   if (!doc) {
     return (
@@ -91,6 +85,28 @@ export default function Detail() {
       checkItems: d.checkItems.map((c, ci) => (ci === i ? { ...c, done: !c.done } : c)),
     }));
 
+  const delCheck = (i) =>
+    patch((d) => ({
+      ...d,
+      checkItems: d.checkItems.filter((_, ci) => ci !== i),
+    }));
+
+  const saveCheckItem = () => {
+    const text = (checkEdit.text || '').trim();
+    if (!text) return;
+    if (checkEdit.index === -1) {
+      patch((d) => ({ ...d, checkItems: [...d.checkItems, { text, done: false }] }));
+    } else {
+      patch((d) => ({
+        ...d,
+        checkItems: d.checkItems.map((c, ci) =>
+          ci === checkEdit.index ? { ...c, text } : c
+        ),
+      }));
+    }
+    setCheckEdit(null);
+  };
+
   const del = () => setDelAsk(true);
   const confirmDelete = () => {
     setDelAsk(false);
@@ -109,17 +125,23 @@ export default function Detail() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={0}
       >
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <KeyboardAwareScrollView
+        ref={scrollRef}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        enableOnAndroid
+        extraScrollHeight={20}
+      >
         <View style={styles.topRow}>
-          <Pressable style={styles.back} onPress={() => router.back()}>
+          <Tap style={styles.back} onPress={() => router.back()}>
             <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.coral} strokeWidth={2.6}>
               <Path d="M15 6l-6 6 6 6" />
             </Svg>
             <Text style={styles.backText}>Home</Text>
-          </Pressable>
-          <Pressable onPress={() => router.push(`/add?edit=${id}`)}>
+          </Tap>
+          <Tap onPress={() => router.push(`/add?edit=${id}`)}>
             <Text style={styles.editText}>Edit</Text>
-          </Pressable>
+          </Tap>
         </View>
 
         <LinearGradient colors={heroColors} style={styles.hero} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
@@ -152,46 +174,86 @@ export default function Detail() {
           <RowItem label="Sound" value={doc.sound} onPress={() => setSheet('sound')} last />
         </View>
 
-        {doc.checkItems.length > 0 && (
-          <View style={styles.section}>
+        <View style={styles.section}>
+          <View style={styles.sectionHead}>
             <Text style={styles.sectionTitle}>Renewal checklist</Text>
-            <View style={styles.card}>
-              {doc.checkItems.map((c, i) => (
-                <Pressable
-                  key={i}
-                  style={[styles.check, i === doc.checkItems.length - 1 && styles.last]}
-                  onPress={() => toggleCheck(i)}
-                >
-                  <View style={[styles.box, c.done && styles.boxDone]}>
-                    {c.done && (
-                      <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={3}>
-                        <Path d="M5 13l4 4L19 7" />
-                      </Svg>
-                    )}
-                  </View>
-                  <Text style={[styles.checkText, c.done && styles.checkDone]}>{c.text}</Text>
-                </Pressable>
-              ))}
-            </View>
+            <Tap
+              style={styles.addCheckBtn}
+              onPress={() => setCheckEdit({ index: -1, text: '' })}
+            >
+              <Text style={styles.addCheckText}>+ Add</Text>
+            </Tap>
           </View>
-        )}
+          <View style={styles.card}>
+            {doc.checkItems.length === 0 ? (
+              <Text style={styles.histEmpty}>No checklist items yet — add your first one above.</Text>
+            ) : (
+              doc.checkItems.map((c, i) => (
+                <SwipeRow key={i} onDelete={() => delCheck(i)}>
+                  <Tap
+                    style={[styles.check, i === doc.checkItems.length - 1 && styles.last]}
+                    onPress={() => toggleCheck(i)}
+                    onLongPress={() => setCheckEdit({ index: i, text: c.text })}
+                  >
+                    <View style={[styles.box, c.done && styles.boxDone]}>
+                      {c.done && (
+                        <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={3}>
+                          <Path d="M5 13l4 4L19 7" />
+                        </Svg>
+                      )}
+                    </View>
+                    <Text style={[styles.checkText, c.done && styles.checkDone]}>{c.text}</Text>
+                  </Tap>
+                </SwipeRow>
+              ))
+            )}
+          </View>
+        </View>
 
-        {doc.history.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Renewal history</Text>
-            <View style={styles.card}>
-              {doc.history.map((h, i) => (
+        <Modal visible={checkEdit !== null} transparent animationType="slide" onRequestClose={() => setCheckEdit(null)}>
+          <Tap style={styles.modalBack} onPress={() => setCheckEdit(null)}>
+            <Tap style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
+              <Text style={styles.modalTitle}>
+                {checkEdit?.index === -1 ? 'Add checklist item' : 'Edit checklist item'}
+              </Text>
+              <TextInput
+                style={styles.modalInput}
+                value={checkEdit?.text || ''}
+                onChangeText={(t) => setCheckEdit((ce) => ({ ...ce, text: t }))}
+                placeholder="e.g. Gather old passport"
+                placeholderTextColor={colors.muted}
+                autoFocus
+              />
+              <View style={styles.modalBtns}>
+                <Tap style={styles.modalCancel} onPress={() => setCheckEdit(null)}>
+                  <Text style={styles.modalCancelText}>Cancel</Text>
+                </Tap>
+                <Tap style={styles.modalSave} onPress={saveCheckItem}>
+                  <Text style={styles.modalSaveText}>Save</Text>
+                </Tap>
+              </View>
+            </Tap>
+          </Tap>
+        </Modal>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Renewal history</Text>
+          <View style={styles.card}>
+            {doc.history.length === 0 ? (
+              <Text style={styles.histEmpty}>No renewals yet — they'll show up here after your first renewal.</Text>
+            ) : (
+              doc.history.map((h, i) => (
                 <View key={i} style={[styles.hist, i === doc.history.length - 1 && styles.last]}>
                   <Text style={styles.histDate}>{fmtD(h.date)}</Text>
                   <Text style={styles.histFee}>{h.fee ? `$${h.fee}` : '—'}</Text>
                 </View>
-              ))}
-            </View>
+              ))
+            )}
           </View>
-        )}
+        </View>
 
         {showPartner && (
-          <Pressable
+          <Tap
             style={styles.partnerWrap}
             onPress={() => Alert.alert('Demo link', `This would open ${partner.partner} in your browser.`, [{ text: 'OK' }])}
           >
@@ -200,15 +262,18 @@ export default function Detail() {
               <Text style={styles.partnerSub}>{partner.sub}</Text>
               <Text style={styles.partnerFine}>Partner link · we may earn a commission at no cost to you</Text>
             </LinearGradient>
-          </Pressable>
+          </Tap>
         )}
 
-        <Comments doc={doc} />
+        <Comments
+          doc={doc}
+          onInputFocus={() => setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 300)}
+        />
 
-        <Pressable style={styles.delete} onPress={del}>
+        <Tap style={styles.delete} onPress={del}>
           <Text style={styles.deleteText}>Delete document</Text>
-        </Pressable>
-      </ScrollView>
+        </Tap>
+      </KeyboardAwareScrollView>
       </KeyboardAvoidingView>
 
       <OptionSheet
@@ -217,7 +282,7 @@ export default function Detail() {
         options={REPEAT_OPTIONS.map((o) => ({ id: o.id, label: o.label }))}
         selectedId={doc.repeat ? doc.repeat.id : 'off'}
         onClose={() => setSheet(null)}
-        onSelect={(o) => {
+        onSave={(o) => {
           const full = REPEAT_OPTIONS.find((x) => x.id === o.id);
           patch((d) => ({ ...d, repeat: o.id === 'off' ? null : full }));
         }}
@@ -228,7 +293,7 @@ export default function Detail() {
         options={[{ id: 'off', label: 'Off', sub: 'No nagging — just the nudges' }, ...NAG_FREQS.map((f) => ({ id: f.id, label: f.label }))]}
         selectedId={!doc.nag ? 'off' : doc.nagFreq}
         onClose={() => setSheet(null)}
-        onSelect={(o) => patch((d) => ({ ...d, nag: o.id !== 'off', nagFreq: o.id === 'off' ? d.nagFreq : o.id }))}
+        onSave={(o) => patch((d) => ({ ...d, nag: o.id !== 'off', nagFreq: o.id === 'off' ? d.nagFreq : o.id }))}
       />
       <OptionSheet
         visible={sheet === 'sound'}
@@ -236,7 +301,7 @@ export default function Detail() {
         options={SOUNDS.map((s) => ({ id: s, label: s }))}
         selectedId={doc.sound}
         onClose={() => setSheet(null)}
-        onSelect={(o) => {
+        onSave={(o) => {
           previewSound(o.label);
           patch((d) => ({ ...d, sound: o.label }));
         }}
@@ -277,8 +342,8 @@ export default function Detail() {
       />
 
       <Modal visible={feeOpen} transparent animationType="fade" onRequestClose={() => setFeeOpen(false)}>
-        <Pressable style={styles.feeBackdrop} onPress={() => setFeeOpen(false)}>
-          <Pressable style={styles.feeCard} onPress={(e) => e.stopPropagation()}>
+        <Tap style={styles.feeBackdrop} onPress={() => setFeeOpen(false)}>
+          <Tap style={styles.feeCard} onPress={(e) => e.stopPropagation()}>
             <Text style={styles.feeTitle}>Nice — renewed!</Text>
             <Text style={styles.feeSub}>What did it cost? (optional)</Text>
             <View style={styles.feeRow}>
@@ -293,13 +358,13 @@ export default function Detail() {
                 autoFocus
               />
             </View>
-            <Pressable onPress={saveRenewal}>
+            <Tap onPress={saveRenewal}>
               <LinearGradient colors={gradients.brand} style={styles.feeSave} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
                 <Text style={styles.feeSaveText}>Record renewal</Text>
               </LinearGradient>
-            </Pressable>
-          </Pressable>
-        </Pressable>
+            </Tap>
+          </Tap>
+        </Tap>
       </Modal>
     </SafeAreaView>
   );
@@ -333,6 +398,46 @@ const styles = StyleSheet.create({
   },
   section: { marginTop: 16 },
   sectionTitle: { fontSize: 17, fontFamily: fonts.extraBold, color: colors.ink, letterSpacing: -0.3, marginBottom: 10 },
+  sectionHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+  addCheckBtn: {
+    backgroundColor: 'rgba(242,102,139,0.12)',
+    borderRadius: radius.pill,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+  },
+  addCheckText: { fontSize: 13.5, fontFamily: fonts.extraBold, color: colors.coral },
+  modalBack: { flex: 1, backgroundColor: 'rgba(43,43,58,0.45)', justifyContent: 'flex-end' },
+  modalCard: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: 26,
+  },
+  modalTitle: { fontSize: 18, fontFamily: fonts.extraBold, color: colors.ink, marginBottom: 12 },
+  modalInput: {
+    backgroundColor: colors.bg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+    fontFamily: fonts.regular,
+    color: colors.ink,
+    marginBottom: 14,
+  },
+  modalBtns: { flexDirection: 'row', gap: 10, justifyContent: 'flex-end' },
+  modalCancel: { paddingVertical: 12, paddingHorizontal: 18 },
+  modalCancelText: { fontSize: 15, fontFamily: fonts.bold, color: colors.muted },
+  modalSave: {
+    backgroundColor: colors.coral,
+    borderRadius: radius.pill,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+  },
+  modalSaveText: { fontSize: 15, fontFamily: fonts.extraBold, color: '#fff' },
   check: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border },
   last: { borderBottomWidth: 0 },
   box: { width: 26, height: 26, borderRadius: 9, borderWidth: 2, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
@@ -342,6 +447,7 @@ const styles = StyleSheet.create({
   hist: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border },
   histDate: { fontSize: 14.5, fontFamily: fonts.bold, color: colors.ink },
   histFee: { fontSize: 14.5, fontFamily: fonts.extraBold, color: colors.coral },
+  histEmpty: { fontSize: 13.5, fontFamily: fonts.regular, color: colors.muted, paddingVertical: 6, lineHeight: 19 },
   partnerWrap: { marginTop: 16 },
   partner: { borderRadius: 22, padding: 18 },
   partnerLabel: { color: '#fff', fontSize: 17, fontFamily: fonts.extraBold },
