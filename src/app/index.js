@@ -1,25 +1,26 @@
 import { useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View,  } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import Owly from '../components/Owly';
 import { colors, fonts, radius } from '../theme';
+import Tap from '../components/Tap';
+import { USER_NAME, getSettings, setUserName } from '../store';
 
 // Welcome screen — the first thing anyone sees.
-// Get Started drops you into the Home tab.
+// Get Started saves the name and drops you into the Home tab.
+// If a name was already saved, skip straight to Home.
 export default function Welcome() {
   const [name, setName] = useState('');
 
+  // Already welcomed? Go straight in.
+  if (getSettings().userName) {
+    router.replace('/home');
+    return null;
+  }
+
   const start = () => {
+    setUserName(name);
     router.replace('/home');
   };
 
@@ -55,12 +56,12 @@ export default function Welcome() {
             returnKeyType="done"
             onSubmitEditing={start}
           />
-          <Pressable
+          <Tap
             style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
             onPress={start}
           >
             <Text style={styles.buttonText}>Get Started</Text>
-          </Pressable>
+          </Tap>
 
           <Text style={styles.foot}>Owly v0.1 · milestone 2</Text>
         </ScrollView>

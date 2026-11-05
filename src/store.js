@@ -4,7 +4,12 @@ import { useSyncExternalStore } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { normalizeDoc, seedDocs, seedPeople } from './data/seed';
 
-export const USER_NAME = 'Sri';
+export let USER_NAME = 'Sri';
+
+export function setUserName(name) {
+  USER_NAME = name.trim() || 'Sri';
+  updateSettings({ userName: USER_NAME });
+}
 
 const DOCS_KEY = 'owly-docs-v1';
 const PEOPLE_KEY = 'owly-people-v1';
@@ -23,6 +28,7 @@ let settings = {
   tone: 'funky', // 'funky' | 'straight' — notification message style
   defaultSound: 'Gentle chime',
   uiSound: 'Pop', // UI tap sounds: Pop | Boop | Squeak | Plip | Silent
+  userName: '', // set on the welcome screen
 };
 let hydrated = false;
 
@@ -52,6 +58,7 @@ export async function hydrate() {
     if (d) docs = JSON.parse(d).map(normalizeDoc);
     if (p) people = JSON.parse(p);
     if (s) settings = { ...settings, ...JSON.parse(s) };
+    if (settings.userName) USER_NAME = settings.userName;
   } catch (e) {
     // Corrupt storage -> fall back to seeds rather than crashing.
   }
