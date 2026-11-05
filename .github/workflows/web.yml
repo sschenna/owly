@@ -33,6 +33,11 @@ jobs:
         run: |
           find dist -type f \( -name "*.html" -o -name "*.js" \) \
             -exec sed -i 's|"\/_expo\/|"/owly/_expo/|g' {} +
+      # SPA fallback: GitHub Pages serves 404.html for any path that
+      # isn't a static file, so deep links (/owly/home, /owly/summary)
+      # load the app and let Expo Router handle the route.
+      - name: Add SPA fallback
+        run: cp dist/index.html dist/404.html
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
