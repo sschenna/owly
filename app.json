@@ -20,7 +20,13 @@
       "expo-asset",
       "expo-camera",
       "expo-splash-screen",
-      "expo-notifications"
+      "expo-notifications",
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Owly needs calendar access to add your expiry reminders."
+        }
+      ]
     ],
     "scheme": "owly",
     "slug": "owly",

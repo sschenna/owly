@@ -12,6 +12,7 @@ import { daysLeft, fmtD, parseIso } from '../../lib/dates';
 import { TYPE_LABELS } from '../../data/seed';
 import { colors, fonts, gradients, radius } from '../../theme';
 import Tap from '../../components/Tap';
+import { exportDocsToCalendar } from '../../lib/calendar';
 
 // ---- status buckets, shared by stats / chart / categories / coverage ----
 export function bucket(docs) {
@@ -104,6 +105,22 @@ export default function Summary() {
   const [range, setRange] = useState(6);
   const [rangeOpen, setRangeOpen] = useState(false);
   const [monthDocs, setMonthDocs] = useState(null); // {label, docs} for the bar sheet
+  const [calMsg, setCalMsg] = useState('');
+
+  const onExportAll = async () => {
+    setCalMsg('');
+    try {
+      const res = await exportDocsToCalendar(docs);
+      setCalMsg(
+        res.mode === 'download'
+          ? `Downloaded! Open the .ics file to add everything to your calendar.`
+          : `Added ${res.count} event${res.count > 1 ? 's' : ''} to your Owly calendar.`
+      );
+    } catch (e) {
+      setCalMsg(e.message);
+    }
+    setTimeout(() => setCalMsg(''), 5000);
+  };
 
   const b = useMemo(() => bucket(docs), [docs]);
   const bars = useMemo(() => monthBuckets(docs, range), [docs, range]);
@@ -147,6 +164,15 @@ export default function Summary() {
 
         <Text style={styles.title}>Summary</Text>
         <Text style={styles.subtitle}>An overview of your documents</Text>
+
+        <Tap style={styles.exportBtn} onPress={onExportAll}>
+          <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2.2}>
+            <Path d="M8 2v4M16 2v4M3 9h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />
+            <Path d="M12 11v6M9 14h6" />
+          </Svg>
+          <Text style={styles.exportText}>Export all to calendar</Text>
+        </Tap>
+        {calMsg ? <Text style={styles.calMsg}>{calMsg}</Text> : null}
 
         <View style={styles.statGrid}>
           <StatCard kind="doc" num={b.total} label="Total Documents" onPress={() => openStatus(null)} />
@@ -270,6 +296,27 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 18, paddingTop: 14, paddingBottom: 110 },
   title: { fontSize: 27, fontFamily: fonts.extraBold, color: colors.ink, letterSpacing: -0.6 },
   subtitle: { fontSize: 14, fontFamily: fonts.regular, color: colors.muted, marginTop: 4, marginBottom: 14 },
+  exportBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: colors.coral,
+    borderRadius: radius.pill,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    marginBottom: 14,
+    alignSelf: 'flex-start',
+  },
+  exportText: { fontSize: 14, fontFamily: fonts.extraBold, color: '#fff' },
+  calMsg: {
+    fontSize: 13,
+    fontFamily: fonts.bold,
+    color: colors.coral,
+    textAlign: 'center',
+    marginBottom: 12,
+    lineHeight: 18,
+  },
   statGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 6 },
   statCard: {
     width: '48%',

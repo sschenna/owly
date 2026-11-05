@@ -18,6 +18,7 @@ import { previewSound } from '../../../lib/sounds';
 import { initials } from '../../../lib/format';
 import Tap from '../../../components/Tap';
 import SwipeRow from '../../../components/SwipeRow';
+import { exportDocsToCalendar } from '../../../lib/calendar';
 
 // Document detail: countdown hero, editable rows, checklist,
 // renewal history, partner card, comments. Tapping the Expiry date
@@ -37,6 +38,7 @@ export default function Detail() {
   const [fee, setFee] = useState('');
   const [renewDate, setRenewDate] = useState(null);
   const [checkEdit, setCheckEdit] = useState(null); // null | {index: -1 for new, or i} + text
+  const [calMsg, setCalMsg] = useState('');
 
   if (!doc) {
     return (
@@ -107,6 +109,21 @@ export default function Detail() {
     setCheckEdit(null);
   };
 
+  const onExportCalendar = async () => {
+    setCalMsg('');
+    try {
+      const res = await exportDocsToCalendar([doc]);
+      setCalMsg(
+        res.mode === 'download'
+          ? `Downloaded! Open the .ics file to add ${res.count} event${res.count > 1 ? 's' : ''} to your calendar.`
+          : `Added ${res.count} event${res.count > 1 ? 's' : ''} to your Owly calendar.`
+      );
+    } catch (e) {
+      setCalMsg(e.message);
+    }
+    setTimeout(() => setCalMsg(''), 5000);
+  };
+
   const del = () => setDelAsk(true);
   const confirmDelete = () => {
     setDelAsk(false);
@@ -171,8 +188,10 @@ export default function Detail() {
           />
           <RowItem label="Repeat" value={(doc.repeat && doc.repeat.label) || 'Off'} onPress={() => setSheet('repeat')} />
           <RowItem label="Nag me" value={nagLabel} onPress={() => setSheet('nag')} />
-          <RowItem label="Sound" value={doc.sound} onPress={() => setSheet('sound')} last />
+          <RowItem label="Sound" value={doc.sound} onPress={() => setSheet('sound')} />
+          <RowItem label="Export to calendar" value="Add expiry + nudges" onPress={onExportCalendar} last />
         </View>
+        {calMsg ? <Text style={styles.calMsg}>{calMsg}</Text> : null}
 
         <View style={styles.section}>
           <View style={styles.sectionHead}>
@@ -399,6 +418,15 @@ const styles = StyleSheet.create({
   section: { marginTop: 16 },
   sectionTitle: { fontSize: 17, fontFamily: fonts.extraBold, color: colors.ink, letterSpacing: -0.3, marginBottom: 10 },
   sectionHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+  calMsg: {
+    fontSize: 13,
+    fontFamily: fonts.bold,
+    color: colors.coral,
+    textAlign: 'center',
+    marginTop: 10,
+    marginHorizontal: 18,
+    lineHeight: 18,
+  },
   addCheckBtn: {
     backgroundColor: 'rgba(242,102,139,0.12)',
     borderRadius: radius.pill,
