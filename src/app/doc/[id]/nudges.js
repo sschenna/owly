@@ -81,8 +81,8 @@ export default function NudgesScreen() {
         options={SOUNDS.map((s) => ({ id: s, label: s }))}
         selectedId={doc.sound}
         onClose={() => setSheet(null)}
+        onOptionTap={(o) => previewSound(o.label)}
         onSave={(o) => {
-          previewSound(o.label);
           patch((d) => ({ ...d, sound: o.label }));
         }}
       />

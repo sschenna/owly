@@ -136,13 +136,22 @@ export async function exportToNativeCalendar(docs) {
 
 // --- Unified entry point ---
 
-export async function exportDocsToCalendar(docs) {
+export async function exportDocsToCalendar(docs, scope = 'full') {
+  // scope: 'full' (expiry + nudges) | 'expiryOnly' | 'all'
+  let exportDocs = docs;
+  if (scope === 'all') {
+    // caller passes null + scope 'all' → resolved by caller to all docs
+    exportDocs = docs;
+  }
+  if (scope === 'expiryOnly') {
+    exportDocs = docs.map((d) => ({ ...d, reminders: [] }));
+  }
   if (Platform.OS === 'web') {
-    downloadICS(docs);
-    return { mode: 'download', count: docs.length };
+    downloadICS(exportDocs);
+    return { mode: 'download', count: exportDocs.length };
   }
   if (await isNativeCalendarAvailable()) {
-    const count = await exportToNativeCalendar(docs);
+    const count = await exportToNativeCalendar(exportDocs);
     return { mode: 'native', count };
   }
   // Expo Go / no native calendar: fall back to .ics via sharing is complex,

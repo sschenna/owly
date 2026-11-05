@@ -109,10 +109,13 @@ export default function Detail() {
     setCheckEdit(null);
   };
 
-  const onExportCalendar = async () => {
+  const [exportOpen, setExportOpen] = useState(false);
+
+  const runExport = async (scope) => {
+    setExportOpen(false);
     setCalMsg('');
     try {
-      const res = await exportDocsToCalendar([doc]);
+      const res = await exportDocsToCalendar([doc], scope);
       setCalMsg(
         res.mode === 'download'
           ? `Downloaded! Open the .ics file to add ${res.count} event${res.count > 1 ? 's' : ''} to your calendar.`
@@ -190,9 +193,20 @@ export default function Detail() {
           <RowItem label="Repeat" value={(doc.repeat && doc.repeat.label) || 'Off'} onPress={() => setSheet('repeat')} icon="repeat" />
           <RowItem label="Nag me" value={nagLabel} onPress={() => setSheet('nag')} icon="clock" />
           <RowItem label="Sound" value={doc.sound} onPress={() => setSheet('sound')} icon="music" />
-          <RowItem label="Export to calendar" value="Add expiry + nudges" onPress={onExportCalendar} icon="calExport" />
+          <RowItem label="Export to calendar" value="Choose what to export" onPress={() => setExportOpen(true)} icon="calExport" />
         </View>
         {calMsg ? <Text style={styles.calMsg}>{calMsg}</Text> : null}
+
+        <OptionSheet
+          visible={exportOpen}
+          title="Export to calendar"
+          options={[
+            { id: 'full', label: 'Expiry + nudges', sub: `Expiry event plus all ${doc.reminders.length} nudge reminders` },
+            { id: 'expiryOnly', label: 'Expiry date only', sub: 'Just the one expiry event, no nudges' },
+          ]}
+          onClose={() => setExportOpen(false)}
+          onSelect={(o) => runExport(o.id)}
+        />
 
         <View style={styles.section}>
           <View style={styles.sectionHead}>
@@ -321,8 +335,8 @@ export default function Detail() {
         options={SOUNDS.map((s) => ({ id: s, label: s }))}
         selectedId={doc.sound}
         onClose={() => setSheet(null)}
+        onOptionTap={(o) => previewSound(o.label)}
         onSave={(o) => {
-          previewSound(o.label);
           patch((d) => ({ ...d, sound: o.label }));
         }}
         renderRight={() => (

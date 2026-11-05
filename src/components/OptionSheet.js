@@ -10,11 +10,14 @@ import Tap from './Tap';
 // If onSave is provided, the sheet shows a Save button and only calls onSave
 // (not onSelect) when Save is tapped. Otherwise onSelect fires immediately
 // (unless closeOnSelect=false).
-export default function OptionSheet({ visible, title, options, selectedId, onSelect, onSave, onClose, renderRight, closeOnSelect = true }) {
+// onOptionTap fires every time an option is tapped (e.g. for sound previews)
+// without committing the selection.
+export default function OptionSheet({ visible, title, options, selectedId, onSelect, onSave, onOptionTap, onClose, renderRight, closeOnSelect = true }) {
   const [staged, setStaged] = useState(selectedId);
   useEffect(() => { if (visible) setStaged(selectedId); }, [visible, selectedId]);
 
   const pick = (o) => {
+    if (onOptionTap) onOptionTap(o);
     if (onSave) {
       setStaged(o.id);
     } else {
