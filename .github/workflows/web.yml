@@ -26,6 +26,13 @@ jobs:
           node-version: 22
       - run: npm install --no-audit --no-fund
       - run: ./node_modules/.bin/expo export --platform web
+      # GitHub Pages serves this repo at /owly/, but Expo emits
+      # domain-root asset paths (/_expo/...). Prefix them so the
+      # app actually loads.
+      - name: Fix asset paths for /owly/ subpath
+        run: |
+          find dist -type f \( -name "*.html" -o -name "*.js" \) \
+            -exec sed -i 's|"\/_expo\/|"/owly/_expo/|g' {} +
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
