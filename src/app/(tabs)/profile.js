@@ -25,14 +25,16 @@ export default function Profile() {
           </Text>
         </LinearGradient>
 
-        <View style={styles.card}>
+        <View>
           <RowItem
             label="People"
             value={`${people.length + 1}`}
             onPress={() => router.push('/people')}
+            icon="user"
           />
-          <RowItem label="Security & PIN" value="" onPress={() => router.push('/security')} />
-          <RowItem label="Notifications" value="" onPress={() => router.push('/notifications')} last />
+          <RowItem label="Security & PIN" value="" onPress={() => router.push('/security')} icon="lock" />
+          <RowItem label="Notifications" value="" onPress={() => router.push('/notifications')} icon="bell" />
+          <RowItem label="Preferences" value="" onPress={() => router.push('/preferences')} icon="gear" />
         </View>
 
         <View style={styles.about}>

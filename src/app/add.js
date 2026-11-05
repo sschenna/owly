@@ -160,14 +160,14 @@ export default function Add() {
               placeholderTextColor={colors.muted}
               maxLength={60}
             />
-            <View style={styles.card}>
-              <RowItem label="Whose is it?" value={ownerName} onPress={() => setOwnerOpen(true)} />
+            <View>
+              <RowItem label="Whose is it?" value={ownerName} onPress={() => setOwnerOpen(true)} icon="user" />
               <RowItem
                 label="Expiry date"
                 value={expiry ? fmtD(expiry) : 'Pick a date'}
                 valueColor={expiry ? colors.ink : colors.coral}
                 onPress={() => setExpiryHow(true)}
-                last
+                icon="calendar"
               />
             </View>
             {notice ? <Text style={styles.notice}>{notice}</Text> : null}

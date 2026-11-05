@@ -179,17 +179,18 @@ export default function Detail() {
           <Text style={styles.heroBig}>{bigText}</Text>
         </LinearGradient>
 
-        <View style={styles.card}>
-          <RowItem label="Expiry date" value={fmtD(doc.expiry)} onPress={onExpiryPress} />
+        <View>
+          <RowItem label="Expiry date" value={fmtD(doc.expiry)} onPress={onExpiryPress} icon="calendar" />
           <RowItem
             label="Nudge plan"
             value={doc.reminders.length === 0 ? 'Off' : `${doc.reminders.length} nudge${doc.reminders.length > 1 ? 's' : ''}`}
             onPress={() => router.push(`/doc/${id}/nudges`)}
+            icon="bell"
           />
-          <RowItem label="Repeat" value={(doc.repeat && doc.repeat.label) || 'Off'} onPress={() => setSheet('repeat')} />
-          <RowItem label="Nag me" value={nagLabel} onPress={() => setSheet('nag')} />
-          <RowItem label="Sound" value={doc.sound} onPress={() => setSheet('sound')} />
-          <RowItem label="Export to calendar" value="Add expiry + nudges" onPress={onExportCalendar} last />
+          <RowItem label="Repeat" value={(doc.repeat && doc.repeat.label) || 'Off'} onPress={() => setSheet('repeat')} icon="repeat" />
+          <RowItem label="Nag me" value={nagLabel} onPress={() => setSheet('nag')} icon="clock" />
+          <RowItem label="Sound" value={doc.sound} onPress={() => setSheet('sound')} icon="music" />
+          <RowItem label="Export to calendar" value="Add expiry + nudges" onPress={onExportCalendar} icon="calExport" />
         </View>
         {calMsg ? <Text style={styles.calMsg}>{calMsg}</Text> : null}
 

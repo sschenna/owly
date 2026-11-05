@@ -163,13 +163,13 @@ export default function Security() {
             </View>
             {pinned ? (
               <>
-                <RowItem label="Change PIN" value="••••" onPress={() => setMode('verify-change')} />
+                <RowItem label="Change PIN" value="••••" onPress={() => setMode('verify-change')} icon="lock" />
                 {bioAvail && (
                   <RowItem
                     label={`${bioType || 'Biometric'} unlock`}
                     value={bioOn ? 'On' : 'Off'}
                     onPress={toggleBio}
-                    last
+                    icon="lock"
                   />
                 )}
               </>
@@ -179,7 +179,7 @@ export default function Security() {
                   label={`${bioType || 'Biometric'} unlock`}
                   value={bioOn ? 'On' : 'Off'}
                   onPress={toggleBio}
-                  last
+                  icon="lock"
                 />
               )
             )}
